@@ -27,7 +27,7 @@ export default function MediaFeature() {
               MEDIA INDONESIA
             </span>
           </div>
-          <p className="mt-5 text-xl font-extrabold uppercase leading-[1] tracking-[-0.035em] text-brand-navy sm:text-2xl">
+          <p className="mt-5 text-xl font-extrabold uppercase leading-none tracking-[-0.035em] text-brand-navy sm:text-2xl">
             &ldquo;Proses pembayaran yang lebih rapi membuat operasional tim
             kami bergerak lebih cepat.&rdquo;
           </p>

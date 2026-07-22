@@ -50,15 +50,15 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <a
-          href="#"
+        <Link
+          href="/login"
           className="hidden items-center gap-2 text-sm font-medium text-white/90 hover:text-white lg:flex"
         >
           Login
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
             <UserIcon />
           </span>
-        </a>
+        </Link>
 
         <button
           onClick={() => setMobileOpen((v) => !v)}
@@ -89,9 +89,9 @@ export default function Navbar() {
                 {item.label}
               </a>
             ))}
-            <a href="#" className="text-sm font-medium text-white/90">
+            <Link href="/login" className="text-sm font-medium text-white/90">
               Login
-            </a>
+            </Link>
           </div>
         </div>
       )}

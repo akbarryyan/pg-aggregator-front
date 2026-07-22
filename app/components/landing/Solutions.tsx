@@ -18,11 +18,11 @@ const cards = [
     tags: ["QRIS", "Checkout", "Invoice", "API", "Webhook"],
   },
   {
-    title: "Routing & Monitoring",
+    title: "Monitoring & Transparansi",
     iconBg: "bg-rose-400",
     description:
-      "Siapkan fondasi payment orchestration sejak awal. Atur provider, webhook, prioritas routing, dan visibilitas transaksi dalam satu sistem yang lebih siap dikembangkan saat volume bisnis meningkat.",
-    tags: ["Provider", "Fallback", "Status", "Logs", "Dashboard"],
+      "Pantau setiap transaksi QRIS secara real-time — status pembayaran, webhook, dan riwayat tercatat rapi dalam satu dashboard. Dibangun di atas fondasi sistem yang siap berkembang seiring pertumbuhan bisnis Anda.",
+    tags: ["QRIS", "Webhook", "Status", "Logs", "Dashboard"],
   },
 ];
 

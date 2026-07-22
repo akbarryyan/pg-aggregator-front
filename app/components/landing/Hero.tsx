@@ -78,12 +78,10 @@ export default function Hero() {
       <Container className="relative grid items-center gap-12 pb-28 pt-36 lg:grid-cols-2 lg:pb-40 lg:pt-44">
         <div>
           <h1 className="max-w-3xl text-2xl font-extrabold capitalize leading-[1.2] tracking-[-0.04em] text-white sm:text-3xl lg:text-4xl">
-            Pembayaran Digital yang Lebih Rapi untuk Bisnis Modern
+            One Integration, Every Payment.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">
-            WhuzPay membantu bisnis menerima pembayaran dengan alur yang
-            lebih sederhana, pemantauan transaksi yang lebih jelas, dan
-            fondasi operasional yang siap tumbuh bersama kebutuhan bisnis.
+            Hubungkan bisnis Anda dengan berbagai metode pembayaran melalui satu platform yang dirancang untuk kecepatan, kemudahan, dan skalabilitas.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
