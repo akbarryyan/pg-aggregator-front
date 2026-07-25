@@ -160,7 +160,7 @@ function WebhookSecretCard() {
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={regenerating}
-              className="!bg-[#e85d3b] !text-white hover:!bg-[#d64f30]"
+              className="bg-[#e85d3b]! text-white! hover:bg-[#d64f30]!"
               onClick={(e) => {
                 e.preventDefault();
                 void handleRegenerate();

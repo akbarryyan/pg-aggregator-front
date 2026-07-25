@@ -196,7 +196,7 @@ export default function MerchantAPIKeysPage() {
           <EmptyState message="No API keys yet." />
         ) : (
           <TableShell>
-            <table className="w-full min-w-[640px] text-left text-[12.5px]">
+            <table className="w-full min-w-160 text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-[#eef2f6] text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                   <th className="px-5 py-3">Environment</th>

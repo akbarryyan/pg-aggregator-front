@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   IconBook,
+  IconChart,
   IconFile,
   IconGrid,
   IconTable,
@@ -14,6 +15,7 @@ import {
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: IconGrid },
   { label: "Payments", href: "/dashboard/payments", icon: IconTable },
+  { label: "Reports", href: "/dashboard/reports", icon: IconChart },
   { label: "Webhook Logs", href: "/dashboard/webhooks", icon: IconWebhook },
   { label: "API keys", href: "/dashboard/api-keys", icon: IconFile },
   { label: "API Docs", href: "/dashboard/api-docs", icon: IconBook },
