@@ -105,7 +105,10 @@ export default function LoginPage() {
             Masuk ke akun Anda
           </h2>
           <p className="mt-2 text-sm text-slate-500">
-            Belum terverifikasi sebagai merchant? Hubungi tim kami untuk mengaktifkan akun.
+            Belum punya akun?{" "}
+            <Link href="/register" className="font-medium text-brand-navy hover:text-brand-navy-light">
+              Daftar sekarang
+            </Link>
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
