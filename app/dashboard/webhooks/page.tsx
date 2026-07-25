@@ -244,7 +244,7 @@ export default function MerchantWebhooksPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5">{row.http_status ?? "—"}</td>
-                    <td className="max-w-[200px] truncate px-5 py-3.5 text-[#e85d3b]">
+                    <td className="max-w-50 truncate px-5 py-3.5 text-[#e85d3b]">
                       {row.error_message || "—"}
                     </td>
                   </tr>
