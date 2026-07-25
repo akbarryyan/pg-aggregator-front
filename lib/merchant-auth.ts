@@ -182,11 +182,14 @@ export async function registerMerchant(payload: {
     | RegisteredMerchant
     | ApiErrorBody
     | null;
+  if (res.status === 409) {
+    throw new Error("Email ini sudah terdaftar. Silakan masuk atau gunakan email lain.");
+  }
+  if (res.status === 429) {
+    throw new Error("Terlalu banyak percobaan. Coba lagi beberapa saat lagi.");
+  }
   if (!res.ok) {
-    throw new Error(
-      (body as ApiErrorBody | null)?.message ??
-        "Gagal mendaftar. Periksa kembali data Anda.",
-    );
+    throw new Error("Gagal mendaftar. Periksa kembali data Anda.");
   }
   return body as RegisteredMerchant;
 }

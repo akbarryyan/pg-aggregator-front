@@ -48,6 +48,10 @@ export default function RegisterPage() {
       setError("Nama, nama bisnis, email, dan password wajib diisi.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Format email tidak valid.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password minimal 8 karakter.");
       return;
@@ -67,14 +71,13 @@ export default function RegisterPage() {
         password,
       });
       toast.success("Pendaftaran berhasil. Silakan masuk.");
-      router.push("/login");
+      router.replace("/login");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : "Tidak bisa terhubung ke server. Coba lagi beberapa saat lagi.",
       );
-    } finally {
       setLoading(false);
     }
   }
@@ -116,7 +119,10 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
             {error && (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+              <div
+                role="alert"
+                className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600"
+              >
                 {error}
               </div>
             )}
@@ -193,6 +199,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 8 karakter"
+                  maxLength={72}
                   className="block w-full rounded-md border border-slate-200 px-3.5 py-2.5 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-navy-light focus:outline-none focus:ring-2 focus:ring-brand-navy-light/20"
                 />
                 <button
@@ -217,6 +224,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ulangi password"
+                maxLength={72}
                 className="mt-1.5 block w-full rounded-md border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-navy-light focus:outline-none focus:ring-2 focus:ring-brand-navy-light/20"
               />
             </div>
