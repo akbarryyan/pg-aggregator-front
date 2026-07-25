@@ -398,3 +398,197 @@ export async function regenerateMerchantWebhookSecret(): Promise<{
   }
   return body as { webhook_secret: string };
 }
+
+// ---- Payment Links --------------------------------------------------------
+// A link is reusable: every checkout through it spawns a fresh one-time
+// payment (see the backend's PaymentLinkService.InitiateCheckout). Creating
+// a link never touches a provider — only the public "pay" call does.
+
+export type PaymentLinkAmountType = "fixed" | "open";
+
+export type MerchantPaymentLink = {
+  id: string;
+  merchant_id: string;
+  slug: string;
+  public_url: string;
+  title: string;
+  description?: string;
+  amount_type: PaymentLinkAmountType;
+  amount?: number | null;
+  currency: string;
+  min_amount?: number | null;
+  max_amount?: number | null;
+  is_active: boolean;
+  expires_at?: string | null;
+  environment: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PaginatedPaymentLinks = {
+  items: MerchantPaymentLink[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export function fetchMerchantPaymentLinks(params?: {
+  environment?: string;
+  is_active?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
+  const environment = params?.environment ?? getMerchantEnvironment();
+  return merchantFetch<PaginatedPaymentLinks>(
+    `/api/v1/merchant/payment-links${toQuery({
+      environment,
+      is_active:
+        params?.is_active === undefined ? undefined : String(params.is_active),
+      limit: params?.limit,
+      offset: params?.offset,
+    })}`,
+  );
+}
+
+export function fetchMerchantPaymentLink(id: string) {
+  return merchantFetch<MerchantPaymentLink>(`/api/v1/merchant/payment-links/${id}`);
+}
+
+export async function createMerchantPaymentLink(payload: {
+  title: string;
+  description?: string;
+  amount_type: PaymentLinkAmountType;
+  amount?: number;
+  min_amount?: number;
+  max_amount?: number;
+  expires_at?: string | null;
+  environment?: string;
+}): Promise<MerchantPaymentLink> {
+  const environment = payload.environment ?? getMerchantEnvironment();
+  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ ...payload, environment }),
+  });
+  const body = (await res.json().catch(() => null)) as
+    | MerchantPaymentLink
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ?? "Failed to create payment link.",
+    );
+  }
+  return body as MerchantPaymentLink;
+}
+
+export async function updateMerchantPaymentLink(
+  id: string,
+  payload: {
+    title?: string;
+    description?: string;
+    is_active?: boolean;
+    expires_at?: string | null;
+    min_amount?: number | null;
+    max_amount?: number | null;
+  },
+): Promise<MerchantPaymentLink> {
+  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const body = (await res.json().catch(() => null)) as
+    | MerchantPaymentLink
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ?? "Failed to update payment link.",
+    );
+  }
+  return body as MerchantPaymentLink;
+}
+
+export async function setMerchantPaymentLinkActive(
+  id: string,
+  isActive: boolean,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links/${id}/status`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    throw new Error(body?.message ?? "Failed to update payment link status.");
+  }
+}
+
+export function fetchMerchantPaymentLinkPayments(
+  id: string,
+  params?: { limit?: number; offset?: number },
+) {
+  return merchantFetch<PaginatedPayments>(
+    `/api/v1/merchant/payment-links/${id}/payments${toQuery({
+      limit: params?.limit,
+      offset: params?.offset,
+    })}`,
+  );
+}
+
+export type PublicPaymentLink = {
+  slug: string;
+  title: string;
+  description?: string;
+  amount_type: PaymentLinkAmountType;
+  amount?: number | null;
+  currency: string;
+  min_amount?: number;
+  max_amount?: number;
+  is_available: boolean;
+  reason?: string;
+  environment: string;
+};
+
+export async function fetchPublicPaymentLink(
+  slug: string,
+): Promise<PublicPaymentLink> {
+  const res = await fetch(
+    `${API_URL}/api/v1/public/payment-links/${encodeURIComponent(slug)}`,
+    { cache: "no-store" },
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(body?.message ?? "Payment link not found.");
+  }
+  return body as PublicPaymentLink;
+}
+
+export async function initiatePaymentLinkCheckout(
+  slug: string,
+  payload: {
+    amount?: number;
+    customer_name?: string;
+    customer_email?: string;
+  },
+): Promise<MerchantPayment> {
+  const res = await fetch(
+    `${API_URL}/api/v1/public/payment-links/${encodeURIComponent(slug)}/pay`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  const body = (await res.json().catch(() => null)) as
+    | MerchantPayment
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ?? "Failed to start checkout.",
+    );
+  }
+  return body as MerchantPayment;
+}
