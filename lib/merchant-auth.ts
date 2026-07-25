@@ -154,6 +154,43 @@ export async function loginMerchant(
   return body as MerchantLoginResponse;
 }
 
+export type RegisteredMerchant = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  business_name: string;
+  webhook_url?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function registerMerchant(payload: {
+  name: string;
+  business_name: string;
+  email: string;
+  phone?: string;
+  password: string;
+}): Promise<RegisteredMerchant> {
+  const res = await fetch(`${API_URL}/api/v1/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = (await res.json().catch(() => null)) as
+    | RegisteredMerchant
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ??
+        "Gagal mendaftar. Periksa kembali data Anda.",
+    );
+  }
+  return body as RegisteredMerchant;
+}
+
 function authHeaders(): HeadersInit {
   const token = getMerchantToken();
   if (!token) throw new Error("Session expired. Please sign in again.");
