@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  IconBook,
   IconFile,
   IconGrid,
   IconTable,
@@ -15,6 +16,7 @@ const navItems = [
   { label: "Payments", href: "/dashboard/payments", icon: IconTable },
   { label: "Webhook Logs", href: "/dashboard/webhooks", icon: IconWebhook },
   { label: "API keys", href: "/dashboard/api-keys", icon: IconFile },
+  { label: "API Docs", href: "/dashboard/api-docs", icon: IconBook },
   { label: "Settings", href: "/dashboard/settings", icon: IconUser },
 ];
 
