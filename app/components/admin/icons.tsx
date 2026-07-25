@@ -355,3 +355,14 @@ export function IconArrowUp(props: IconProps) {
     </svg>
   );
 }
+
+export function IconWebhook(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="6" cy="7" r="2.3" />
+      <circle cx="6" cy="17" r="2.3" />
+      <circle cx="18" cy="12" r="2.3" />
+      <path d="M8 7.5 15.8 11M8 16.5 15.8 13" />
+    </svg>
+  );
+}

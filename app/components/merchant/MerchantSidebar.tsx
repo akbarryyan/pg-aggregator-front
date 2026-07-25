@@ -7,11 +7,13 @@ import {
   IconGrid,
   IconTable,
   IconUser,
+  IconWebhook,
 } from "../admin/icons";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: IconGrid },
   { label: "Payments", href: "/dashboard/payments", icon: IconTable },
+  { label: "Webhook Logs", href: "/dashboard/webhooks", icon: IconWebhook },
   { label: "API keys", href: "/dashboard/api-keys", icon: IconFile },
   { label: "Settings", href: "/dashboard/settings", icon: IconUser },
 ];

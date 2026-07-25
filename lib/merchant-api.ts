@@ -299,6 +299,41 @@ export async function deleteMerchantAPIKey(keyId: string, password: string) {
   }
 }
 
+export type MerchantCallback = {
+  id: string;
+  payment_id: string;
+  payment_reference?: string;
+  merchant_id: string;
+  event_type: string;
+  target_url: string;
+  attempt_number: number;
+  status: string;
+  http_status?: number | null;
+  response_body?: string | null;
+  error_message?: string | null;
+  delivered_at?: string | null;
+  next_retry_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PaginatedCallbacks = {
+  items: MerchantCallback[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export function fetchMerchantCallbacks(params?: {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return merchantFetch<PaginatedCallbacks>(
+    `/api/v1/merchant/callbacks${toQuery(params ?? {})}`,
+  );
+}
+
 export type MerchantBusiness = {
   id: string;
   name: string;
