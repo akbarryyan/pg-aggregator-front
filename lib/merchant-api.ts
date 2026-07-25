@@ -372,3 +372,29 @@ export async function updateMerchantBusiness(payload: {
   }
   return body as MerchantBusiness;
 }
+
+export function fetchMerchantWebhookSecret() {
+  return merchantFetch<{ webhook_secret: string }>(
+    "/api/v1/merchant/webhook-secret",
+  );
+}
+
+export async function regenerateMerchantWebhookSecret(): Promise<{
+  webhook_secret: string;
+}> {
+  const res = await fetch(`${API_URL}/api/v1/merchant/webhook-secret/regenerate`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  const body = (await res.json().catch(() => null)) as
+    | { webhook_secret: string }
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ??
+        "Failed to regenerate webhook secret.",
+    );
+  }
+  return body as { webhook_secret: string };
+}

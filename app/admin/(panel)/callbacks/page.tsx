@@ -172,7 +172,7 @@ export default function AdminCallbacksPage() {
               value={String(pageSize)}
               options={PAGE_SIZE_OPTIONS}
               onChange={(v) => setPageSize(Number(v))}
-              className="w-[120px]"
+              className="w-30"
             />
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -214,7 +214,7 @@ export default function AdminCallbacksPage() {
           <EmptyState message="No merchant callback deliveries yet." />
         ) : (
           <TableShell>
-            <table className="w-full min-w-[1100px] text-left text-[12.5px]">
+            <table className="w-full min-w-275 text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-[#eef2f6] text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                   <th className="px-5 py-3">Time</th>
@@ -257,7 +257,7 @@ export default function AdminCallbacksPage() {
                     <td className="px-5 py-3.5 font-medium text-[#1f2a37]">
                       {row.event_type}
                     </td>
-                    <td className="max-w-[200px] truncate px-5 py-3.5 text-[#6b7c93]">
+                    <td className="max-w-50 truncate px-5 py-3.5 text-[#6b7c93]">
                       {row.target_url}
                     </td>
                     <td className="px-5 py-3.5">#{row.attempt_number}</td>
@@ -273,7 +273,7 @@ export default function AdminCallbacksPage() {
                     <td className="px-5 py-3.5">
                       {row.http_status ?? "—"}
                     </td>
-                    <td className="max-w-[180px] truncate px-5 py-3.5 text-[#e85d3b]">
+                    <td className="max-w-45 truncate px-5 py-3.5 text-[#e85d3b]">
                       {row.error_message || "—"}
                     </td>
                     <td className="px-5 py-3.5">

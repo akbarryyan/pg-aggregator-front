@@ -16,6 +16,13 @@ const NAV = [
   { id: "errors", label: "Error Format" },
 ];
 
+function scrollToSection(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.history.replaceState(null, "", `#${id}`);
+}
+
 function CodeBlock({ code, language = "bash" }: { code: string; language?: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -189,7 +196,11 @@ export default function ApiDocsPage() {
           <a
             key={item.id}
             href={`#${item.id}`}
-            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#3d4b5c] hover:bg-[#f4f7fb]"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection(item.id);
+            }}
+            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#3d4b5c] transition-colors duration-150 hover:bg-[#f4f7fb]"
           >
             {item.label}
           </a>
@@ -360,7 +371,7 @@ export default function ApiDocsPage() {
         <p className="text-[13px] font-medium text-[#3d4b5c]">Request headers</p>
         <CodeBlock
           language="http"
-          code={`Content-Type: application/json\nUser-Agent: pg-aggregator-callback/1.0\nX-PG-Event: payment.paid`}
+          code={`Content-Type: application/json\nUser-Agent: pg-aggregator-callback/1.0\nX-PG-Event: payment.paid\nX-PG-Signature: <hmac-sha256-hex>`}
         />
 
         <p className="text-[13px] font-medium text-[#3d4b5c]">Example payload</p>
@@ -398,11 +409,59 @@ export default function ApiDocsPage() {
         </p>
 
         <div className="rounded-lg border border-[#ffe1b3] bg-[#fff8ec] px-3.5 py-3 text-[12.5px] text-[#8a5a1f]">
-          <strong>Not implemented yet:</strong> webhook payloads are not
-          currently signed. There is no signature header to verify, so
-          don&apos;t treat an incoming request on this URL as automatically
-          trustworthy — this section will be updated once signing ships.
+          <strong>Verify the signature before trusting the payload.</strong>{" "}
+          Anyone who finds your webhook URL can otherwise POST a fake{" "}
+          <code className="font-mono">payment.paid</code> event and trick
+          your system into shipping an order that was never paid for.
         </div>
+
+        <p className="text-[13px] font-medium text-[#3d4b5c]">
+          How to verify
+        </p>
+        <ol className="list-decimal space-y-1 pl-5 text-[13px] text-[#3d4b5c]">
+          <li>Get your signing secret from Dashboard → Settings.</li>
+          <li>Take the raw request body exactly as received (don&apos;t re-serialize it — key order/whitespace must match what we signed).</li>
+          <li>Compute HMAC-SHA256 of that raw body using your secret.</li>
+          <li>Compare the hex digest to the <code className="font-mono">X-PG-Signature</code> header using a constant-time comparison.</li>
+          <li>If it doesn&apos;t match, reject with 401 and don&apos;t touch your database.</li>
+        </ol>
+
+        <p className="text-[13px] font-medium text-[#3d4b5c]">Example (Node.js)</p>
+        <CodeBlock
+          language="javascript"
+          code={`const crypto = require('crypto');
+
+app.post('/webhooks/payments', (req, res) => {
+  const signature = req.headers['x-pg-signature'];
+  if (!signature) return res.status(401).send('Missing signature');
+
+  // req.rawBody must be the exact bytes received — see your framework's
+  // raw-body middleware (e.g. express.raw()) if you're not already keeping it.
+  const expected = crypto
+    .createHmac('sha256', process.env.PG_WEBHOOK_SECRET)
+    .update(req.rawBody)
+    .digest('hex');
+
+  const ok =
+    signature.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+
+  if (!ok) return res.status(401).send('Invalid signature');
+
+  const { event, status } = req.body;
+  if (event === 'payment.paid' && status === 'paid') {
+    // mark the order paid in your own database
+  }
+
+  res.status(200).send('OK');
+});`}
+        />
+
+        <p className="text-[12.5px] text-[#8a97a8]">
+          Regenerating your secret (also in Settings) invalidates the old one
+          immediately — update your verification code before you rotate it,
+          not after.
+        </p>
       </Section>
 
       <Section
