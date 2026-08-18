@@ -73,6 +73,11 @@ export default function MerchantProviderConfigSection({ merchantId }: Props) {
   }
 
   useEffect(() => {
+    // `load` synchronously calls setLoading(true) before its first await —
+    // redundant here since `loading` already starts true, but real for the
+    // manual refresh call sites below. The linter can't see the await
+    // boundary through the function call.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merchantId]);

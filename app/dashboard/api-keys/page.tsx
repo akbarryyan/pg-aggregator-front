@@ -10,6 +10,7 @@ import {
   upsertMerchantAPIKey,
   type MerchantAPIKey,
 } from "@/lib/merchant-api";
+import { API_URL as API_BASE } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -34,8 +35,6 @@ const KEY_ENV_OPTIONS = [
   { value: "sandbox", label: "Sandbox" },
   { value: "production", label: "Production" },
 ];
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export default function MerchantAPIKeysPage() {
   const [items, setItems] = useState<MerchantAPIKey[]>([]);
@@ -67,6 +66,11 @@ export default function MerchantAPIKeysPage() {
   }
 
   useEffect(() => {
+    // `load` synchronously calls setLoading(true) before its first await —
+    // redundant here since `loading` already starts true, but real for the
+    // manual refresh call sites below. The linter can't see the await
+    // boundary through the function call.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, []);
 

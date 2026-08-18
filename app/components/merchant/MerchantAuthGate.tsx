@@ -25,6 +25,11 @@ export default function MerchantAuthGate({
       router.replace("/login");
       return;
     }
+    // Reads localStorage, unavailable during SSR — `ready` must stay false
+    // until this effect runs on the client, or server/client markup would
+    // mismatch on first paint (see use-merchant-environment.ts for the
+    // same reasoning).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReady(true);
   }, [router, pathname]);
 

@@ -1,6 +1,5 @@
 import { getAdminToken } from "./admin-auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { API_URL } from "./config";
 
 export type DashboardSummary = {
   total_payments: number;

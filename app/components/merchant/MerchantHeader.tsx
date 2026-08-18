@@ -66,6 +66,10 @@ export default function MerchantHeader({ onMenuClick }: Props) {
   }, []);
 
   useEffect(() => {
+    // Reads localStorage — see MerchantAuthGate.tsx for why this must stay
+    // an effect rather than a render-time computation (SSR hydration
+    // safety).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfile(getMerchantProfile());
   }, [pathname]);
 

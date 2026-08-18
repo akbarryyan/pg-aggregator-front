@@ -10,6 +10,7 @@ import {
   retryAdminCallback,
   type AdminCallback,
 } from "@/lib/admin-api";
+import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
 import {
   Pagination,
@@ -82,21 +83,17 @@ export default function AdminCallbacksPage() {
   const [items, setItems] = useState<AdminCallback[]>([]);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("");
-  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [page, setPage] = usePagination([status, pageSize], totalPages);
   const pageItems = useMemo(
     () => buildPageItems(page, totalPages),
     [page, totalPages],
   );
-
-  useEffect(() => {
-    setPage(1);
-  }, [status, pageSize]);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,10 +124,6 @@ export default function AdminCallbacksPage() {
       cancelled = true;
     };
   }, [status, page, pageSize, refreshKey]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
 
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);

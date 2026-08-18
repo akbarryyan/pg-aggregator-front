@@ -18,6 +18,7 @@ import {
   type MerchantPayment,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
+import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -74,7 +75,6 @@ export default function MerchantPaymentsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -82,14 +82,19 @@ export default function MerchantPaymentsPage() {
   const [exporting, setExporting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [page, setPage] = usePagination(
+    [status, search, dateFrom, dateTo, pageSize, environment],
+    totalPages,
+  );
 
-  useEffect(() => {
+  // Forward a valid ?status= from the URL into local filter state whenever
+  // it changes — adjusted during render (not an effect) so this doesn't
+  // cost an extra render/fetch cycle for a value we already have.
+  const [prevStatusFromUrl, setPrevStatusFromUrl] = useState(statusFromUrl);
+  if (prevStatusFromUrl !== statusFromUrl) {
+    setPrevStatusFromUrl(statusFromUrl);
     if (VALID.has(statusFromUrl)) setStatus(statusFromUrl);
-  }, [statusFromUrl]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [status, search, dateFrom, dateTo, pageSize, environment]);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -123,10 +128,6 @@ export default function MerchantPaymentsPage() {
       cancelled = true;
     };
   }, [status, search, dateFrom, dateTo, page, pageSize, refreshKey, environment]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
 
   async function handleQuickCreate() {
     setCreating(true);

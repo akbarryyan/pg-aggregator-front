@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   fetchPublicPaymentByReference,
   type PublicPayment,
@@ -66,14 +66,14 @@ export default function PublicPayPage() {
     };
   }, [reference]);
 
-  const remaining = useMemo(() => {
+  const remaining = (() => {
     if (!payment?.expires_at) return null;
     const ms = new Date(payment.expires_at).getTime() - now;
     if (ms <= 0) return "Expired";
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms % 60000) / 1000);
     return `${m}:${String(s).padStart(2, "0")}`;
-  }, [payment?.expires_at, now]);
+  })();
 
   const isImageQr =
     payment?.qris_data?.startsWith("data:image") ||

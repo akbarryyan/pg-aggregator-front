@@ -12,6 +12,12 @@ export function useMerchantEnvironment() {
   const [environment, setEnv] = useState<MerchantEnvironment>("sandbox");
 
   useEffect(() => {
+    // Reads localStorage, which doesn't exist during SSR — the state
+    // initializer above must stay a plain "sandbox" default so server and
+    // client markup match on first paint. Computing this during render
+    // instead of here would cause a hydration mismatch whenever the stored
+    // value differs from the default.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEnv(getMerchantEnvironment());
     function onStorage(e: StorageEvent) {
       if (e.key === "merchant_environment") {

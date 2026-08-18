@@ -10,6 +10,7 @@ import {
   type MerchantPaymentLink,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
+import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
 import {
   Pagination,
@@ -94,20 +95,16 @@ export default function PaymentLinksPage() {
   const [items, setItems] = useState<MerchantPaymentLink[]>([]);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("");
-  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [page, setPage] = usePagination([status, pageSize, environment], totalPages);
   const pageItems = useMemo(
     () => buildPageItems(page, totalPages),
     [page, totalPages],
   );
-
-  useEffect(() => {
-    setPage(1);
-  }, [status, pageSize, environment]);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,10 +135,6 @@ export default function PaymentLinksPage() {
       cancelled = true;
     };
   }, [status, page, pageSize, refreshKey, environment]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
 
   async function copyLink(url: string) {
     try {

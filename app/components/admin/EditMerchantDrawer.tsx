@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import {
   updateAdminMerchant,
@@ -45,13 +45,20 @@ export default function EditMerchantDrawer({
   const [webhookURL, setWebhookURL] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!merchant || !open) return;
-    setName(merchant.name ?? "");
-    setBusinessName(merchant.business_name ?? "");
-    setPhone(merchant.phone ?? "");
-    setWebhookURL(merchant.webhook_url ?? "");
-  }, [merchant, open]);
+  // Reset the form fields whenever the drawer opens for a merchant —
+  // adjusted during render (React's documented pattern for resetting state
+  // when an input changes) instead of an effect+setState round-trip.
+  const resetKey = open ? (merchant?.id ?? null) : null;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
+    if (resetKey && merchant) {
+      setName(merchant.name ?? "");
+      setBusinessName(merchant.business_name ?? "");
+      setPhone(merchant.phone ?? "");
+      setWebhookURL(merchant.webhook_url ?? "");
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

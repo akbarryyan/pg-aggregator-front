@@ -62,6 +62,9 @@ export default function AdminHeader({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reads localStorage — see AdminAuthGate.tsx for why this must stay an
+    // effect rather than a render-time computation (SSR hydration safety).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfile(getAdminProfile());
   }, [pathname]);
 
