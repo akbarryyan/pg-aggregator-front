@@ -1,30 +1,25 @@
 import Container from "./Container";
+import { btnPrimary, btnOnNavy, focusRingDark } from "./styles";
 
 export default function CtaRow() {
   return (
-    <section id="hubungi-sales" className="bg-white py-16">
-      <Container className="flex flex-col items-start justify-between gap-6 border-b border-slate-100 pb-16 lg:flex-row lg:items-center">
+    <section id="hubungi-sales" className="scroll-mt-24 bg-brand-navy py-20 sm:py-24">
+      <Container className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
         <div>
-          <h2 className="max-w-2xl text-2xl font-extrabold leading-[0.98] tracking-[-0.035em] text-brand-navy sm:text-3xl">
+          <h2 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
             Siap menata alur pembayaran bisnis Anda?
           </h2>
-          <p className="mt-3 max-w-lg text-base text-slate-500 sm:text-lg">
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
             Ceritakan kebutuhan bisnis Anda, lalu kita susun alur integrasi,
             checkout, dan routing pembayaran yang paling relevan.
           </p>
         </div>
 
-        <div className="flex shrink-0 gap-3">
-          <a
-            href="#"
-            className="rounded-md bg-brand-yellow px-6 py-3 text-sm font-bold uppercase tracking-wide text-brand-navy-dark shadow-sm transition-colors hover:bg-brand-yellow-dark"
-          >
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <a href="#" className={`${btnPrimary} ${focusRingDark}`}>
             Hubungi Sales
           </a>
-          <a
-            href="#"
-            className="rounded-md border border-slate-200 px-6 py-3 text-sm font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-50"
-          >
+          <a href="#" className={`${btnOnNavy} ${focusRingDark}`}>
             Konsultasi Sekarang
           </a>
         </div>

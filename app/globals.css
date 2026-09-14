@@ -195,5 +195,15 @@ h3 {
   }
   html {
     @apply font-sans;
+    /* In-page anchors (landing nav) glide instead of teleporting. Paired
+       with scroll-mt-* on the targets so the fixed navbar doesn't cover
+       the heading it just scrolled to. */
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }

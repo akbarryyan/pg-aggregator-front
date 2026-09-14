@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Container from "./Container";
+import { focusRingDark } from "./styles";
 
 const socials = [
   {
@@ -27,12 +27,12 @@ export default function Footer() {
             </p>
             <ul className="mt-3 flex flex-col gap-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="#" className={`rounded-sm hover:text-white ${focusRingDark}`}>
                   Payment Gateway
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="#" className={`rounded-sm hover:text-white ${focusRingDark}`}>
                   Disbursement
                 </a>
               </li>
@@ -45,17 +45,17 @@ export default function Footer() {
             </p>
             <ul className="mt-3 flex flex-col gap-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="#" className={`rounded-sm hover:text-white ${focusRingDark}`}>
                   Tentang Kami
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="#" className={`rounded-sm hover:text-white ${focusRingDark}`}>
                   Karir
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="#" className={`rounded-sm hover:text-white ${focusRingDark}`}>
                   Kebijakan Privasi
                 </a>
               </li>
@@ -72,7 +72,7 @@ export default function Footer() {
                   key={s.label}
                   href="#"
                   aria-label={s.label}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 ${focusRingDark}`}
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                     <path d={s.path} />
@@ -87,23 +87,21 @@ export default function Footer() {
           <p className="text-xs font-bold uppercase tracking-wide text-white">
             Sertifikat
           </p>
-          <div className="mt-3 flex flex-col gap-2">
+          <ul className="mt-3 flex flex-col items-start gap-2">
             {[
               "Bank Indonesia",
               "PCI DSS Compliant",
               "KOMINFO",
               "ISO 27001:2013",
             ].map((label) => (
-              <Image
+              <li
                 key={label}
-                src={`https://placehold.co/130x40/ffffff/16407d.png?text=${encodeURIComponent(label)}`}
-                alt={label}
-                width={130}
-                height={40}
-                className="w-fit rounded-md"
-              />
+                className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80"
+              >
+                {label}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
         <div>

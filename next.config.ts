@@ -1,20 +1,8 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "placehold.co",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "www.duitku.com",
-        pathname: "/wp-content/uploads/**",
-      },
-    ],
-  },
-};
+// No remotePatterns: every image on the site is now local markup or SVG.
+// Adding a host here re-opens the app to third-party image requests, so add
+// one only when a real asset needs it.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
