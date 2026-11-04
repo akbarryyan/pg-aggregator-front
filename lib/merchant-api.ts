@@ -1,6 +1,7 @@
 import {
   getMerchantEnvironment,
   getMerchantToken,
+  merchantAuthFetch,
   MERCHANT_API_URL as API_URL,
 } from "./merchant-auth";
 
@@ -26,7 +27,7 @@ function toQuery(params: Record<string, string | number | undefined | null>) {
 }
 
 async function merchantFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await merchantAuthFetch(`${API_URL}${path}`, {
     method: "GET",
     headers: authHeaders(),
     cache: "no-store",
@@ -184,7 +185,7 @@ export async function exportMerchantPayments(params?: {
   environment?: string;
 }): Promise<void> {
   const environment = params?.environment ?? getMerchantEnvironment();
-  const res = await fetch(
+  const res = await merchantAuthFetch(
     `${API_URL}/api/v1/merchant/payments/export${toQuery({
       ...params,
       environment,
@@ -228,7 +229,7 @@ export async function createMerchantPayment(payload: {
   environment?: string;
 }): Promise<MerchantPayment> {
   const environment = payload.environment ?? getMerchantEnvironment();
-  const res = await fetch(`${API_URL}/api/v1/merchant/payments`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/payments`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
@@ -269,7 +270,7 @@ export async function upsertMerchantAPIKey(payload: {
   environment: string;
   password: string;
 }) {
-  const res = await fetch(`${API_URL}/api/v1/merchant/api-keys`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/api-keys`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -288,7 +289,7 @@ export async function upsertMerchantAPIKey(payload: {
 }
 
 export async function deleteMerchantAPIKey(keyId: string, password: string) {
-  const res = await fetch(`${API_URL}/api/v1/merchant/api-keys/${keyId}`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/api-keys/${keyId}`, {
     method: "DELETE",
     headers: authHeaders(),
     body: JSON.stringify({ password }),
@@ -356,7 +357,7 @@ export async function updateMerchantBusiness(payload: {
   business_name?: string;
   webhook_url?: string | null;
 }): Promise<MerchantBusiness> {
-  const res = await fetch(`${API_URL}/api/v1/merchant/business`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/business`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -379,12 +380,17 @@ export function fetchMerchantWebhookSecret() {
   );
 }
 
-export async function regenerateMerchantWebhookSecret(): Promise<{
+// The backend requires the account password to rotate the secret, so a stolen
+// session alone cannot swap it.
+export async function regenerateMerchantWebhookSecret(
+  password: string,
+): Promise<{
   webhook_secret: string;
 }> {
-  const res = await fetch(`${API_URL}/api/v1/merchant/webhook-secret/regenerate`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/webhook-secret/regenerate`, {
     method: "POST",
     headers: authHeaders(),
+    body: JSON.stringify({ password }),
   });
   const body = (await res.json().catch(() => null)) as
     | { webhook_secret: string }
@@ -465,7 +471,7 @@ export async function createMerchantPaymentLink(payload: {
   environment?: string;
 }): Promise<MerchantPaymentLink> {
   const environment = payload.environment ?? getMerchantEnvironment();
-  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/payment-links`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ ...payload, environment }),
@@ -493,7 +499,7 @@ export async function updateMerchantPaymentLink(
     max_amount?: number | null;
   },
 ): Promise<MerchantPaymentLink> {
-  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links/${id}`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/payment-links/${id}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -514,7 +520,7 @@ export async function setMerchantPaymentLinkActive(
   id: string,
   isActive: boolean,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/merchant/payment-links/${id}/status`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/merchant/payment-links/${id}/status`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify({ is_active: isActive }),

@@ -1,5 +1,8 @@
-import { getAdminToken } from "./admin-auth";
+import { adminAuthFetch, getAdminToken } from "./admin-auth";
 import { API_URL } from "./config";
+
+// Empty means sandbox on the server.
+export type Environment = "sandbox" | "production";
 
 export type DashboardSummary = {
   total_payments: number;
@@ -99,7 +102,7 @@ function authHeaders(): HeadersInit {
 }
 
 async function adminFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await adminAuthFetch(`${API_URL}${path}`, {
     method: "GET",
     headers: authHeaders(),
     cache: "no-store",
@@ -186,14 +189,14 @@ export type CreatePaymentPayload = {
   callback_url?: string;
   // Empty means sandbox on the server: a missing value must never create a
   // real-money payment. The admin form always sends it explicitly.
-  environment?: "sandbox" | "production";
+  environment?: Environment;
   expires_in_minutes?: number;
 };
 
 export async function createAdminPayment(
   payload: CreatePaymentPayload,
 ): Promise<AdminPayment> {
-  const res = await fetch(`${API_URL}/api/v1/admin/payments`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/admin/payments`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
@@ -224,7 +227,7 @@ export async function exportAdminPayments(params?: {
   search?: string;
   merchant_id?: string;
 }): Promise<void> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/payments/export${toQuery(params ?? {})}`,
     {
       method: "GET",
@@ -274,7 +277,7 @@ export type CreateMerchantPayload = {
 export async function createAdminMerchant(
   payload: CreateMerchantPayload,
 ): Promise<AdminMerchant> {
-  const res = await fetch(`${API_URL}/api/v1/admin/merchants`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/admin/merchants`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -298,7 +301,7 @@ export async function exportAdminMerchants(params?: {
   search?: string;
   status?: string;
 }): Promise<void> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/export${toQuery(params ?? {})}`,
     {
       method: "GET",
@@ -356,7 +359,7 @@ export async function exportAdminLogs(params?: {
   provider?: string;
   processed?: string;
 }): Promise<void> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/logs/export${toQuery(params ?? {})}`,
     {
       method: "GET",
@@ -455,7 +458,7 @@ export async function updateAdminProviderHealth(
   name: string,
   payload: UpdateProviderHealthPayload,
 ): Promise<AdminProviderDetail> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/providers/${encodeURIComponent(name)}/health`,
     {
       method: "PUT",
@@ -511,7 +514,7 @@ export async function upsertAdminMerchantProviderConfig(
   merchantId: string,
   payload: UpsertMerchantProviderConfigPayload,
 ): Promise<AdminMerchantProviderConfig[]> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/${merchantId}/provider-configs`,
     {
       method: "PUT",
@@ -544,7 +547,7 @@ export async function deleteAdminMerchantProviderConfig(
   providerName: string,
   paymentMethod: string,
 ): Promise<void> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/${merchantId}/provider-configs${toQuery({
       provider_name: providerName,
       payment_method: paymentMethod,
@@ -622,7 +625,7 @@ export type AdminReconcileBatchResponse = {
 export async function checkAdminReconciliationPayment(
   paymentId: string,
 ): Promise<AdminReconcileResult> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/reconciliation/${paymentId}/check`,
     {
       method: "POST",
@@ -644,7 +647,7 @@ export async function checkAdminReconciliationPayment(
 export async function checkAdminReconciliationBatch(
   limit = 20,
 ): Promise<AdminReconcileBatchResponse> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/reconciliation/check${toQuery({ limit })}`,
     {
       method: "POST",
@@ -709,7 +712,7 @@ export function fetchAdminPaymentCallbacks(paymentId: string) {
 export async function retryAdminCallback(
   id: string,
 ): Promise<AdminCallback> {
-  const res = await fetch(`${API_URL}/api/v1/admin/callbacks/${id}/retry`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/admin/callbacks/${id}/retry`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -736,7 +739,7 @@ export async function updateAdminMerchant(
   id: string,
   payload: UpdateMerchantPayload,
 ): Promise<AdminMerchant> {
-  const res = await fetch(`${API_URL}/api/v1/admin/merchants/${id}`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/admin/merchants/${id}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -757,7 +760,7 @@ export async function setAdminMerchantActive(
   id: string,
   isActive: boolean,
 ): Promise<AdminMerchant> {
-  const res = await fetch(`${API_URL}/api/v1/admin/merchants/${id}/status`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/admin/merchants/${id}/status`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify({ is_active: isActive }),
@@ -805,7 +808,7 @@ export async function upsertAdminMerchantAPIKey(
   merchantId: string,
   payload: { environment: "sandbox" | "production" | string; password: string },
 ): Promise<UpsertMerchantAPIKeyResponse> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/${merchantId}/api-keys`,
     {
       method: "PUT",
@@ -833,7 +836,7 @@ export async function deleteAdminMerchantAPIKey(
   keyId: string,
   password: string,
 ): Promise<void> {
-  const res = await fetch(
+  const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/${merchantId}/api-keys/${keyId}`,
     {
       method: "DELETE",

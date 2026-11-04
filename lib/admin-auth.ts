@@ -126,6 +126,48 @@ export function consumeAdminAuthNotice(): AdminAuthNotice | null {
   return null;
 }
 
+// Tell the server to revoke this session, then forget the token locally. The
+// local clear always happens: a failed call must never leave the user signed in.
+export async function logoutAdmin(): Promise<void> {
+  const token = getAdminToken();
+  try {
+    if (token) {
+      await fetch(`${API_URL}/api/v1/auth/admin/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  } catch {
+    // ignore: the token is removed below regardless
+  } finally {
+    clearAdminSession();
+  }
+}
+
+// The one place a revoked/expired session is detected for authenticated
+// calls. Only the middleware's "Invalid or expired token" 401 means the
+// session is dead: other 401s are ordinary errors and must not sign the
+// admin out.
+export async function adminAuthFetch(
+  input: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const res = await fetch(input, init);
+  if (res.status === 401 && typeof window !== "undefined") {
+    const body = (await res
+      .clone()
+      .json()
+      .catch(() => null)) as ApiErrorBody | null;
+    if (body?.message === "Invalid or expired token" && getAdminToken()) {
+      clearAdminSession();
+      setAdminRedirectPath(window.location.pathname);
+      setAdminAuthNotice("expired");
+      window.location.replace("/admin/login");
+    }
+  }
+  return res;
+}
+
 export async function loginAdmin(
   email: string,
   password: string,
@@ -152,7 +194,7 @@ export async function loginAdmin(
 }
 
 export async function fetchAdminMe(): Promise<AdminProfile> {
-  const res = await fetch(`${API_URL}/api/v1/auth/admin/me`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/auth/admin/me`, {
     method: "GET",
     headers: authHeaders(),
   });
@@ -175,7 +217,7 @@ export async function updateAdminProfile(
   name: string,
   email: string,
 ): Promise<AdminProfile> {
-  const res = await fetch(`${API_URL}/api/v1/auth/admin/profile`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/auth/admin/profile`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify({ name, email }),
@@ -199,7 +241,7 @@ export async function changeAdminPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/auth/admin/change-password`, {
+  const res = await adminAuthFetch(`${API_URL}/api/v1/auth/admin/change-password`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({

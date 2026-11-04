@@ -33,6 +33,7 @@ function WebhookSecretCard() {
   const [revealed, setRevealed] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [regeneratePassword, setRegeneratePassword] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -72,10 +73,11 @@ function WebhookSecretCard() {
   async function handleRegenerate() {
     setRegenerating(true);
     try {
-      const data = await regenerateMerchantWebhookSecret();
+      const data = await regenerateMerchantWebhookSecret(regeneratePassword);
       setSecret(data.webhook_secret);
       setRevealed(true);
       setConfirmOpen(false);
+      setRegeneratePassword("");
       toast.success("Webhook secret regenerated.");
     } catch (err) {
       toast.error(
@@ -144,7 +146,13 @@ function WebhookSecretCard() {
         </p>
       )}
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setRegeneratePassword("");
+        }}
+      >
         <AlertDialogContent className="max-w-sm border border-[#e8eef4] bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate webhook secret?</AlertDialogTitle>
@@ -154,12 +162,29 @@ function WebhookSecretCard() {
               deliveries until you update it with the new one.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div>
+            <label
+              htmlFor="regenerate-password"
+              className="text-[12.5px] font-medium text-[#3d4b5c]"
+            >
+              Confirm with your password
+            </label>
+            <input
+              id="regenerate-password"
+              type="password"
+              autoComplete="current-password"
+              value={regeneratePassword}
+              onChange={(e) => setRegeneratePassword(e.target.value)}
+              disabled={regenerating}
+              className="mt-1.5 h-10 w-full rounded-lg border border-[#e8eef4] bg-white px-3 text-[13px] text-[#1f2a37] outline-none focus:border-[#3b9eff]"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={regenerating}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={regenerating}
+              disabled={regenerating || regeneratePassword === ""}
               className="bg-[#e85d3b]! text-white! hover:bg-[#d64f30]!"
               onClick={(e) => {
                 e.preventDefault();

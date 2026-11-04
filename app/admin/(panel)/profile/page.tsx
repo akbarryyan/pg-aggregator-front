@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   changeAdminPassword,
+  clearAdminSession,
   fetchAdminMe,
   getAdminProfile,
   updateAdminProfile,
@@ -102,6 +104,7 @@ async function withMinDelay<T>(promise: Promise<T>, minMs: number): Promise<T> {
 }
 
 export default function AdminProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -197,7 +200,11 @@ export default function AdminProfilePage() {
       );
       setCurrentPassword("");
       setNewPassword("");
-      toast.success("Password changed successfully.");
+      // The server revoked every token (including this one) on password
+      // change, so drop the dead session and send the admin to sign in again.
+      clearAdminSession();
+      toast.success("Password changed, please sign in again");
+      router.replace("/admin/login");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to change password.";

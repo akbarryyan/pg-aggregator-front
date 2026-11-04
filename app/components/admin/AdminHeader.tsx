@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type SVGProps } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
-  clearAdminSession,
+  logoutAdmin,
   getAdminProfile,
   type AdminProfile,
 } from "@/lib/admin-auth";
@@ -100,13 +100,17 @@ export default function AdminHeader({
 
   function handleConfirmSignOut() {
     setSigningOut(true);
-    window.setTimeout(() => {
-      clearAdminSession();
+    // Revoke server-side (local token is cleared even if that call fails),
+    // keeping the minimum delay so the "signing out" state is visible.
+    void Promise.all([
+      logoutAdmin(),
+      new Promise((resolve) => window.setTimeout(resolve, 700)),
+    ]).then(() => {
       setSigningOut(false);
       setSignOutOpen(false);
       toast.success("Signed out successfully.");
       router.replace("/admin/login");
-    }, 700);
+    });
   }
 
   const initials = getInitials(profile);

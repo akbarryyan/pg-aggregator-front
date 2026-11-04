@@ -403,10 +403,8 @@ export default function ApiDocsPage() {
 
         <p className="text-[13px] text-[#3d4b5c]">
           <code className="font-mono">event</code> is one of{" "}
-          <code className="font-mono">payment.paid</code>,{" "}
-          <code className="font-mono">payment.expired</code>,{" "}
-          <code className="font-mono">payment.failed</code>,{" "}
-          <code className="font-mono">payment.cancelled</code>.
+          <code className="font-mono">payment.paid</code> or{" "}
+          <code className="font-mono">payment.expired</code>.
         </p>
 
         <p className="text-[13px] text-[#3d4b5c]">

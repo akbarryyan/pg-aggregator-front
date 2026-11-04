@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   changeMerchantPassword,
+  clearMerchantSession,
   fetchMerchantMe,
   getMerchantProfile,
   updateMerchantProfile,
@@ -18,6 +20,7 @@ import {
 } from "../../components/admin/ui";
 
 export default function MerchantProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<MerchantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -77,7 +80,11 @@ export default function MerchantProfilePage() {
       await changeMerchantPassword(currentPassword, newPassword);
       setCurrentPassword("");
       setNewPassword("");
-      toast.success("Password changed.");
+      // The server revoked every token (including this one) on password
+      // change, so drop the dead session and send the user to sign in again.
+      clearMerchantSession();
+      toast.success("Password changed, please sign in again");
+      router.replace("/login");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to change password.",

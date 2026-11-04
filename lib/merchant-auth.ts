@@ -204,7 +204,7 @@ function authHeaders(): HeadersInit {
 }
 
 export async function fetchMerchantMe(): Promise<MerchantProfile> {
-  const res = await fetch(`${API_URL}/api/v1/auth/me`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/auth/me`, {
     method: "GET",
     headers: authHeaders(),
   });
@@ -224,7 +224,7 @@ export async function updateMerchantProfile(
   name: string,
   email: string,
 ): Promise<MerchantProfile> {
-  const res = await fetch(`${API_URL}/api/v1/auth/profile`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/auth/profile`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify({ name, email }),
@@ -245,7 +245,7 @@ export async function changeMerchantPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/auth/change-password`, {
+  const res = await merchantAuthFetch(`${API_URL}/api/v1/auth/change-password`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
@@ -257,6 +257,48 @@ export async function changeMerchantPassword(
     const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
     throw new Error(body?.message ?? "Failed to change password.");
   }
+}
+
+// Tell the server to revoke this session, then forget the token locally. The
+// local clear always happens: a failed call must never leave the user signed in.
+export async function logoutMerchant(): Promise<void> {
+  const token = getMerchantToken();
+  try {
+    if (token) {
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  } catch {
+    // ignore: the token is removed below regardless
+  } finally {
+    clearMerchantSession();
+  }
+}
+
+// The one place a revoked/expired session is detected for authenticated
+// calls. Only the middleware's "Invalid or expired token" 401 means the
+// session is dead: other 401s (e.g. "Invalid password" on regenerate) are
+// ordinary errors and must not sign the user out.
+export async function merchantAuthFetch(
+  input: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const res = await fetch(input, init);
+  if (res.status === 401 && typeof window !== "undefined") {
+    const body = (await res
+      .clone()
+      .json()
+      .catch(() => null)) as ApiErrorBody | null;
+    if (body?.message === "Invalid or expired token" && getMerchantToken()) {
+      clearMerchantSession();
+      setMerchantRedirectPath(window.location.pathname);
+      setMerchantAuthNotice("expired");
+      window.location.replace("/login");
+    }
+  }
+  return res;
 }
 
 export { authHeaders as merchantAuthHeaders, API_URL as MERCHANT_API_URL };

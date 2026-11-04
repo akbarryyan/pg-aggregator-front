@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type SVGProps } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
-  clearMerchantSession,
+  logoutMerchant,
   getMerchantProfile,
   type MerchantProfile,
 } from "@/lib/merchant-auth";
@@ -107,13 +107,17 @@ export default function MerchantHeader({ onMenuClick }: Props) {
 
   function handleConfirmSignOut() {
     setSigningOut(true);
-    window.setTimeout(() => {
-      clearMerchantSession();
+    // Revoke server-side (local token is cleared even if that call fails),
+    // keeping the minimum delay so the "signing out" state is visible.
+    void Promise.all([
+      logoutMerchant(),
+      new Promise((resolve) => window.setTimeout(resolve, 700)),
+    ]).then(() => {
       setSigningOut(false);
       setSignOutOpen(false);
       toast.success("Signed out successfully.");
       router.replace("/login");
-    }, 700);
+    });
   }
 
   const initials = getInitials(profile);

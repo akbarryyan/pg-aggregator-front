@@ -6,6 +6,7 @@ import {
   createAdminPayment,
   fetchAdminMerchants,
   type AdminMerchant,
+  type Environment,
 } from "@/lib/admin-api";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,9 +46,7 @@ export default function CreatePaymentDrawer({
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [expiresIn, setExpiresIn] = useState("30");
-  const [environment, setEnvironment] = useState<"sandbox" | "production">(
-    "sandbox",
-  );
+  const [environment, setEnvironment] = useState<Environment>("sandbox");
   const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -266,7 +265,7 @@ export default function CreatePaymentDrawer({
                 id="payment-environment"
                 value={environment}
                 onChange={(e) =>
-                  setEnvironment(e.target.value as "sandbox" | "production")
+                  setEnvironment(e.target.value as Environment)
                 }
                 className="h-10 w-full rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3 text-[13.5px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
               >
