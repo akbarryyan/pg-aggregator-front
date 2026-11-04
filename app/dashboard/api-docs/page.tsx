@@ -244,7 +244,7 @@ export default function ApiDocsPage() {
             { field: "payment_method", type: "string", required: false, description: 'Defaults to "qris" — the only supported method right now.' },
             { field: "customer_name", type: "string", required: false, description: "Optional, shown on the checkout page." },
             { field: "customer_email", type: "string", required: false, description: "Optional." },
-            { field: "callback_url", type: "string", required: false, description: "Per-payment webhook override. Falls back to the webhook URL set in Dashboard → Settings if omitted." },
+            { field: "callback_url", type: "string", required: false, description: "Per-payment webhook override. Falls back to the webhook URL set in Dashboard → Settings if omitted. Must be https and a public host; sandbox payments may also use plain http. localhost, private or internal addresses, credentials in the URL, and our own domains are rejected with 400." },
             { field: "expires_in_minutes", type: "integer", required: false, description: "Defaults to 30. Max 1440 (24h)." },
             { field: "use_custom_merchant_name", type: "boolean", required: false, description: "Requests a custom merchant name on the QR, where the provider supports it. Currently only takes effect on Cashi if that feature is enabled on your Cashi account — otherwise silently ignored." },
           ]}
@@ -342,13 +342,13 @@ export default function ApiDocsPage() {
       <Section
         id="lifecycle"
         title="Status Lifecycle"
-        description="A payment moves through at most one of these transitions — once it reaches a terminal status, it never changes again."
+        description="A payment normally ends in one terminal status. The one exception: if the customer pays after expires_at, an expired payment can still become paid."
       >
         <div className="grid gap-2.5 sm:grid-cols-2">
           {[
             { s: "pending", d: "Created, waiting for the customer to pay before expires_at." },
-            { s: "paid", d: "Confirmed paid by the provider. Terminal." },
-            { s: "expired", d: "Not paid before expires_at. Terminal." },
+            { s: "paid", d: "Confirmed paid by the provider. Terminal. Check late_payment in the webhook: true means it was paid after the payment had already expired." },
+            { s: "expired", d: "Not paid before expires_at. Terminal, except that a late payment can still turn it into paid." },
             { s: "failed", d: "Provider or internal error prevented completion. Terminal." },
             { s: "cancelled", d: "Cancelled before payment. Terminal." },
           ].map((row) => (
@@ -361,12 +361,20 @@ export default function ApiDocsPage() {
             </div>
           ))}
         </div>
+
+        <div className="rounded-lg border border-[#ffe1b3] bg-[#fff8ec] px-3.5 py-3 text-[12.5px] text-[#8a5a1f]">
+          <strong>Don&apos;t treat expired as final.</strong> You may receive{" "}
+          <code className="font-mono">payment.expired</code> and later{" "}
+          <code className="font-mono">payment.paid</code> with{" "}
+          <code className="font-mono">late_payment: true</code>. Decide in
+          advance whether to fulfil the order or refund the customer.
+        </div>
       </Section>
 
       <Section
         id="webhooks"
         title="Webhooks"
-        description="Set your webhook URL in Dashboard → Settings (or override per-payment with callback_url). We POST here whenever a payment's status changes to a terminal state."
+        description="Set your webhook URL in Dashboard → Settings (or override per-payment with callback_url). We POST here whenever a payment's status changes. The webhook URL must be https and a public host."
       >
         <p className="text-[13px] font-medium text-[#3d4b5c]">Request headers</p>
         <CodeBlock
@@ -387,6 +395,7 @@ export default function ApiDocsPage() {
   "merchant_id": "11111111-...",
   "provider": "cashi",
   "provider_reference": "INV-9921",
+  "late_payment": false,
   "paid_at": "2026-07-25T13:15:40Z",
   "occurred_at": "2026-07-25T13:15:41Z"
 }`}
@@ -401,12 +410,29 @@ export default function ApiDocsPage() {
         </p>
 
         <p className="text-[13px] text-[#3d4b5c]">
+          <code className="font-mono">late_payment</code> is{" "}
+          <code className="font-mono">true</code> only on a{" "}
+          <code className="font-mono">payment.paid</code> that arrives after
+          the payment had expired. A{" "}
+          <code className="font-mono">payment.paid</code> can therefore
+          follow a <code className="font-mono">payment.expired</code> for
+          the same payment.
+        </p>
+
+        <p className="text-[13px] text-[#3d4b5c]">
           Respond with any <code className="font-mono">2xx</code> status to
           acknowledge. Failed deliveries (non-2xx, timeout, connection
           refused) retry automatically — 5 attempts total, 5 minutes apart —
           visible any time under{" "}
           <code className="font-mono">Dashboard → Webhook Logs</code>.
         </p>
+
+        <ul className="list-disc space-y-1 pl-5 text-[13px] text-[#3d4b5c]">
+          <li>Callbacks are sent shortly after the status change, usually within about 5 seconds, not inline with the payment request.</li>
+          <li>Delivery is <strong>at-least-once</strong>: the same event can arrive more than once. De-duplicate on <code className="font-mono">payment_id</code> + <code className="font-mono">event</code> and make your handler idempotent.</li>
+          <li>Redirects (3xx) are <strong>not followed</strong> and count as a failed delivery — register the final URL.</li>
+          <li>Your endpoint must be reachable on the public internet over https; URLs pointing at localhost or private networks are rejected.</li>
+        </ul>
 
         <div className="rounded-lg border border-[#ffe1b3] bg-[#fff8ec] px-3.5 py-3 text-[12.5px] text-[#8a5a1f]">
           <strong>Verify the signature before trusting the payload.</strong>{" "}
@@ -431,7 +457,7 @@ export default function ApiDocsPage() {
           language="javascript"
           code={`const crypto = require('crypto');
 
-app.post('/webhooks/payments', (req, res) => {
+app.post('/webhooks/payments', async (req, res) => {
   const signature = req.headers['x-pg-signature'];
   if (!signature) return res.status(401).send('Missing signature');
 
@@ -448,10 +474,18 @@ app.post('/webhooks/payments', (req, res) => {
 
   if (!ok) return res.status(401).send('Invalid signature');
 
-  const { event, status } = req.body;
+  const { event, status, payment_id, late_payment } = req.body;
+
+  // Delivery is at-least-once: skip events you already handled.
+  // alreadyProcessed / markProcessed: your own de-duplication store
+  if (await alreadyProcessed(payment_id, event)) return res.status(200).send('OK');
+
   if (event === 'payment.paid' && status === 'paid') {
-    // mark the order paid in your own database
+    // mark the order paid in your own database; if late_payment is true the
+    // payment arrived after it expired — fulfil or refund per your policy
   }
+
+  await markProcessed(payment_id, event);
 
   res.status(200).send('OK');
 });`}
@@ -478,7 +512,7 @@ app.post('/webhooks/payments', (req, res) => {
         />
         <StatusCodeTable
           rows={[
-            { code: "400", label: "Bad Request", description: "Invalid request body or validation failure (bad amount, missing description, etc)." },
+            { code: "400", label: "Bad Request", description: "Invalid request body or validation failure (bad amount, missing description, invalid callback_url, etc)." },
             { code: "401", label: "Unauthorized", description: "Missing, invalid, or revoked API key." },
             { code: "403", label: "Forbidden", description: "Merchant account is inactive." },
             { code: "404", label: "Not Found", description: "Payment doesn't exist, or belongs to a different merchant." },

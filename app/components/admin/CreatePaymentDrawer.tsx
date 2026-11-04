@@ -45,6 +45,9 @@ export default function CreatePaymentDrawer({
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [expiresIn, setExpiresIn] = useState("30");
+  const [environment, setEnvironment] = useState<"sandbox" | "production">(
+    "sandbox",
+  );
   const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -86,6 +89,7 @@ export default function CreatePaymentDrawer({
     setCustomerName("");
     setCustomerEmail("");
     setExpiresIn("30");
+    setEnvironment("sandbox");
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -116,6 +120,7 @@ export default function CreatePaymentDrawer({
         expires_in_minutes: Number(expiresIn) || 30,
         payment_method: "qris",
         currency: "IDR",
+        environment,
       });
       toast.success("Payment created successfully.");
       resetForm();
@@ -248,6 +253,32 @@ export default function CreatePaymentDrawer({
                   className="h-10 w-full rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3 text-[13.5px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
                 />
               </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="payment-environment"
+                className="mb-1.5 block text-[13px] font-medium text-[#3d4b5c]"
+              >
+                Environment
+              </label>
+              <select
+                id="payment-environment"
+                value={environment}
+                onChange={(e) =>
+                  setEnvironment(e.target.value as "sandbox" | "production")
+                }
+                className="h-10 w-full rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3 text-[13.5px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
+              >
+                <option value="sandbox">Sandbox (test, no real money)</option>
+                <option value="production">Production (real payment)</option>
+              </select>
+              {environment === "production" && (
+                <p className="mt-2 rounded-lg border border-[#ffe1b3] bg-[#fff8ec] px-3 py-2 text-[12.5px] text-[#8a5a1f]">
+                  Production payments go through the real payment provider and
+                  move real money.
+                </p>
+              )}
             </div>
 
             <div>

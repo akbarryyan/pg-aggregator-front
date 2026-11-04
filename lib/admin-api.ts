@@ -184,6 +184,9 @@ export type CreatePaymentPayload = {
   customer_name?: string;
   customer_email?: string;
   callback_url?: string;
+  // Empty means sandbox on the server: a missing value must never create a
+  // real-money payment. The admin form always sends it explicitly.
+  environment?: "sandbox" | "production";
   expires_in_minutes?: number;
 };
 
