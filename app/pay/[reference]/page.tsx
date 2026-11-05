@@ -75,6 +75,8 @@ export default function PublicPayPage() {
     return `${m}:${String(s).padStart(2, "0")}`;
   })();
 
+  const hasFee = (payment?.fee_amount ?? 0) > 0;
+
   const isImageQr =
     payment?.qris_data?.startsWith("data:image") ||
     payment?.qris_data?.startsWith("http");
@@ -98,9 +100,14 @@ export default function PublicPayPage() {
             <>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[12px] text-[#8a97a8]">Amount</p>
+                  <p className="text-[12px] text-[#8a97a8]">
+                    {hasFee ? "Total to pay" : "Amount"}
+                  </p>
                   <p className="mt-0.5 text-[28px] font-bold tracking-tight text-[#1f2a37]">
-                    {formatIDR(payment.amount, payment.currency)}
+                    {formatIDR(
+                      hasFee ? payment.total_amount : payment.amount,
+                      payment.currency,
+                    )}
                   </p>
                   <p className="mt-1 text-[12px] text-[#8a97a8]">
                     Ref · {payment.reference}
@@ -114,6 +121,23 @@ export default function PublicPayPage() {
                   {payment.status}
                 </span>
               </div>
+
+              {hasFee && (
+                <dl className="space-y-1.5 rounded-xl border border-[#eef2f6] bg-[#fafbfc] px-4 py-3 text-[13px] text-[#3d4b5c]">
+                  <div className="flex justify-between">
+                    <dt>Amount</dt>
+                    <dd>{formatIDR(payment.amount, payment.currency)}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Service fee</dt>
+                    <dd>{formatIDR(payment.fee_amount, payment.currency)}</dd>
+                  </div>
+                  <div className="flex justify-between border-t border-[#e8eef4] pt-1.5 font-semibold text-[#1f2a37]">
+                    <dt>Total to pay</dt>
+                    <dd>{formatIDR(payment.total_amount, payment.currency)}</dd>
+                  </div>
+                </dl>
+              )}
 
               {payment.status === "pending" && payment.qris_data && (
                 <div className="rounded-xl border border-[#eef2f6] bg-[#fafbfc] p-4 text-center">

@@ -319,6 +319,18 @@ export default function MerchantSettingsPage() {
             </div>
             {business && (
               <p className="text-[12.5px] text-[#8a97a8]">
+                Fee paid by:{" "}
+                <span className="font-medium text-[#3d4b5c]">
+                  {business.fee_bearer === "customer" ? "Customer" : "Merchant"}
+                </span>
+                <br />
+                {business.fee_bearer === "customer"
+                  ? "Your customers pay the amount plus the payment provider's fee (for example 0.7%), and you receive the full amount. Set by the platform admin."
+                  : "The payment provider's fee is deducted from your payments; customers pay exactly the amount. Set by the platform admin."}
+              </p>
+            )}
+            {business && (
+              <p className="text-[12.5px] text-[#8a97a8]">
                 Login email (account):{" "}
                 <span className="font-medium text-[#3d4b5c]">
                   {business.email}

@@ -15,12 +15,18 @@ export type DashboardSummary = {
   webhook_events: number;
 };
 
+export type FeeBearer = "merchant" | "customer";
+
 export type AdminPayment = {
   id: string;
   reference: string;
   merchant_id: string;
   merchant_name: string;
   amount: number;
+  // Fee borne by the customer on top of amount (0 when the merchant bears it).
+  fee_amount: number;
+  // What the customer actually pays: amount + fee_amount.
+  total_amount: number;
   currency: string;
   payment_method: string;
   provider_name: string;
@@ -45,6 +51,7 @@ export type AdminMerchant = {
   business_name: string;
   webhook_url?: string | null;
   is_active: boolean;
+  fee_bearer: FeeBearer;
   created_at: string;
   updated_at: string;
 };
@@ -580,6 +587,8 @@ export type AdminReconciliationItem = {
   provider_reference?: string | null;
   status: string;
   amount: number;
+  fee_amount: number;
+  total_amount: number;
   currency: string;
   created_at: string;
   expires_at: string;
@@ -773,6 +782,31 @@ export async function setAdminMerchantActive(
     throw new Error(
       (body as ApiErrorBody | null)?.message ??
         "Failed to update merchant status.",
+    );
+  }
+  return body as AdminMerchant;
+}
+
+// Admin only: who pays the provider's percentage fee for this merchant.
+export async function setMerchantFeeBearer(
+  id: string,
+  feeBearer: FeeBearer,
+): Promise<AdminMerchant> {
+  const res = await adminAuthFetch(
+    `${API_URL}/api/v1/admin/merchants/${id}/fee-bearer`,
+    {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ fee_bearer: feeBearer }),
+    },
+  );
+  const body = (await res.json().catch(() => null)) as
+    | AdminMerchant
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ?? "Failed to update fee setting.",
     );
   }
   return body as AdminMerchant;

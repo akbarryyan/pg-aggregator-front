@@ -238,7 +238,7 @@ export default function ApiDocsPage() {
 
         <ParamTable
           rows={[
-            { field: "amount", type: "integer", required: true, description: "Amount in IDR (whole rupiah, no decimals). Provider may add a small unique suffix for payment matching." },
+            { field: "amount", type: "integer", required: true, description: "Amount in IDR (whole rupiah, no decimals). This is the nominal amount of the payment. If your account is set so customers bear the fee, a provider fee is added on top (see fee_amount / total_amount in the response)." },
             { field: "description", type: "string", required: true, description: "Shown to the customer on the checkout page." },
             { field: "currency", type: "string", required: false, description: 'Defaults to "IDR" — the only supported currency right now.' },
             { field: "payment_method", type: "string", required: false, description: 'Defaults to "qris" — the only supported method right now.' },
@@ -269,7 +269,9 @@ export default function ApiDocsPage() {
   "id": "3a1b2c3d-...",
   "reference": "PAY-1784900000-abc12345",
   "merchant_id": "11111111-...",
-  "amount": 50042,
+  "amount": 50000,
+  "fee_amount": 0,
+  "total_amount": 50000,
   "currency": "IDR",
   "payment_method": "qris",
   "provider_name": "cashi",
@@ -288,11 +290,26 @@ export default function ApiDocsPage() {
 }`}
         />
         <p className="text-[12.5px] text-[#8a97a8]">
-          Note: <code className="font-mono">amount</code> in the response is
-          the final amount the customer must pay — it may differ slightly
-          from what you sent (provider-added unique suffix for payment
-          matching). Always display the response amount, not your request
-          amount.
+          Note: <code className="font-mono">amount</code> is the nominal
+          amount of the payment. Providers currently return it as you
+          requested it, but always read{" "}
+          <code className="font-mono">amount</code>,{" "}
+          <code className="font-mono">fee_amount</code> and{" "}
+          <code className="font-mono">total_amount</code> from the response
+          instead of relying on the value you sent. If your account is set up so that the customer bears the
+          payment provider&apos;s fee (configured by the platform admin),
+          the customer pays{" "}
+          <code className="font-mono">total_amount = amount + fee_amount</code>,
+          the provider deducts its fee from that total, and you receive{" "}
+          <code className="font-mono">amount</code>. Otherwise{" "}
+          <code className="font-mono">fee_amount</code> is{" "}
+          <code className="font-mono">0</code> and{" "}
+          <code className="font-mono">total_amount</code> equals{" "}
+          <code className="font-mono">amount</code>. For example, with a
+          0.7% provider fee, an amount of 2000 gives a{" "}
+          <code className="font-mono">total_amount</code> of 2015. Show your
+          customer <code className="font-mono">total_amount</code> if you
+          display the payable figure yourself.
         </p>
       </Section>
 
@@ -325,7 +342,9 @@ export default function ApiDocsPage() {
   "id": "3a1b2c3d-...",
   "reference": "PAY-1784900000-abc12345",
   "status": "paid",
-  "amount": 50042,
+  "amount": 50000,
+  "fee_amount": 0,
+  "total_amount": 50000,
   "currency": "IDR",
   "paid_at": "2026-07-25T13:15:40Z",
   "expires_at": "2026-07-25T13:20:09Z"
@@ -390,7 +409,9 @@ export default function ApiDocsPage() {
   "payment_id": "3a1b2c3d-...",
   "reference": "PAY-1784900000-abc12345",
   "status": "paid",
-  "amount": 50042,
+  "amount": 50000,
+  "fee_amount": 0,
+  "total_amount": 50000,
   "currency": "IDR",
   "merchant_id": "11111111-...",
   "provider": "cashi",

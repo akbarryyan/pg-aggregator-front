@@ -260,6 +260,14 @@ export default function AdminReconciliationPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       {formatIDR(row.amount, row.currency)}
+                      {row.fee_amount > 0 && (
+                        <p
+                          className="mt-0.5 text-[11px] font-normal text-[#8a97a8]"
+                          title={`The provider is expected to report ${formatIDR(row.total_amount, row.currency)}`}
+                        >
+                          + {formatIDR(row.fee_amount, row.currency)} fee
+                        </p>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <StatusBadge status={row.status} />

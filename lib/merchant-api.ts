@@ -57,6 +57,10 @@ export type MerchantPayment = {
   merchant_id: string;
   merchant_name?: string;
   amount: number;
+  // Provider fee added on top of amount when the customer bears it (0 otherwise).
+  fee_amount: number;
+  // What the customer actually pays: amount + fee_amount.
+  total_amount: number;
   currency: string;
   payment_method: string;
   provider_name: string;
@@ -137,6 +141,8 @@ export type PublicPayment = {
   id: string;
   reference: string;
   amount: number;
+  fee_amount: number;
+  total_amount: number;
   currency: string;
   status: string;
   description: string;
@@ -342,6 +348,8 @@ export type MerchantBusiness = {
   phone: string;
   business_name: string;
   webhook_url?: string | null;
+  // Read-only for merchants; set by the platform admin.
+  fee_bearer?: "merchant" | "customer";
   is_active: boolean;
   created_at: string;
   updated_at: string;

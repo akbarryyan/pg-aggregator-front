@@ -116,9 +116,21 @@ export default function AdminPaymentDetailPage() {
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <Field
-                label="Amount"
+                label="Nominal"
                 value={formatIDR(payment.amount, payment.currency)}
               />
+              {payment.fee_amount > 0 && (
+                <>
+                  <Field
+                    label="Fee"
+                    value={formatIDR(payment.fee_amount, payment.currency)}
+                  />
+                  <Field
+                    label="Total"
+                    value={formatIDR(payment.total_amount, payment.currency)}
+                  />
+                </>
+              )}
               <Field label="Merchant" value={payment.merchant_name || "—"} />
               <Field
                 label="Merchant ID"

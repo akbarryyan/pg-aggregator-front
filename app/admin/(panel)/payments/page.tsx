@@ -345,6 +345,11 @@ export default function AdminPaymentsPage() {
                     </td>
                     <td className="px-5 py-3.5 font-medium text-[#1f2a37]">
                       {formatIDR(p.amount, p.currency)}
+                      {p.fee_amount > 0 && (
+                        <p className="mt-0.5 text-[11px] font-normal text-[#8a97a8]">
+                          + {formatIDR(p.fee_amount, p.currency)} fee
+                        </p>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 capitalize">
                       {p.provider_name}

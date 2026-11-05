@@ -122,6 +122,18 @@ export default function MerchantPaymentDetailPage() {
                 label="Amount"
                 value={formatIDR(payment.amount, payment.currency)}
               />
+              {payment.fee_amount > 0 && (
+                <>
+                  <Field
+                    label="Fee (paid by customer)"
+                    value={formatIDR(payment.fee_amount, payment.currency)}
+                  />
+                  <Field
+                    label="Total paid by customer"
+                    value={formatIDR(payment.total_amount, payment.currency)}
+                  />
+                </>
+              )}
               <Field label="Method" value={payment.payment_method} />
               <Field label="Provider" value={payment.provider_name} />
               <Field

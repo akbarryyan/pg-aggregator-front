@@ -12,6 +12,8 @@ import {
   fetchAdminMerchant,
   fetchAdminMerchantPayments,
   setAdminMerchantActive,
+  setMerchantFeeBearer,
+  type FeeBearer,
   type AdminMerchant,
   type AdminPayment,
 } from "@/lib/admin-api";
@@ -41,6 +43,8 @@ export default function AdminMerchantDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [feeBearerDraft, setFeeBearerDraft] = useState<FeeBearer>("merchant");
+  const [savingFee, setSavingFee] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +59,7 @@ export default function AdminMerchantDetailPage() {
         ]);
         if (cancelled) return;
         setMerchant(m);
+        setFeeBearerDraft(m.fee_bearer ?? "merchant");
         setPayments(p.items ?? []);
       } catch (err) {
         if (!cancelled) {
@@ -91,6 +96,32 @@ export default function AdminMerchantDetailPage() {
       );
     } finally {
       setToggling(false);
+    }
+  }
+
+  async function handleSaveFeeBearer() {
+    if (!merchant || feeBearerDraft === merchant.fee_bearer) return;
+    // Switching to customer changes what customers are charged, so confirm.
+    if (
+      feeBearerDraft === "customer" &&
+      !window.confirm(
+        "Customers of this merchant will be charged the nominal plus Cashi's 0.7% fee on new payments. Continue?",
+      )
+    ) {
+      return;
+    }
+    setSavingFee(true);
+    try {
+      const updated = await setMerchantFeeBearer(merchant.id, feeBearerDraft);
+      setMerchant(updated);
+      setFeeBearerDraft(updated.fee_bearer);
+      toast.success("Fee setting updated.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update fee setting.",
+      );
+    } finally {
+      setSavingFee(false);
     }
   }
 
@@ -226,6 +257,39 @@ export default function AdminMerchantDetailPage() {
                   {formatDateTime(merchant.updated_at)}
                 </p>
               </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 sm:p-6">
+            <h3 className="text-[15px] font-semibold text-[#1f2a37]">
+              Fee borne by
+            </h3>
+            <p className="mt-1 text-[12.5px] text-[#6b7c93]">
+              Merchant: the customer pays the nominal; Cashi&apos;s fee is
+              deducted from what the merchant receives. Customer: the customer
+              pays the nominal plus Cashi&apos;s fee (0.7%), and the merchant
+              receives the full nominal. Example: nominal Rp 2.000 → customer
+              pays Rp 2.015. Applies to new payments only.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <select
+                value={feeBearerDraft}
+                onChange={(e) => setFeeBearerDraft(e.target.value as FeeBearer)}
+                disabled={savingFee}
+                aria-label="Fee bearer"
+                className="h-9 rounded-lg border border-[#e8eef4] bg-white px-3 text-[13px] text-[#1f2a37]"
+              >
+                <option value="merchant">Merchant</option>
+                <option value="customer">Customer</option>
+              </select>
+              <Button
+                type="button"
+                size="sm"
+                disabled={savingFee || feeBearerDraft === merchant.fee_bearer}
+                onClick={() => void handleSaveFeeBearer()}
+              >
+                {savingFee ? "Saving..." : "Save"}
+              </Button>
             </div>
           </Card>
 
