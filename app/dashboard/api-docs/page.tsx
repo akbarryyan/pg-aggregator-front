@@ -536,8 +536,9 @@ app.post('/webhooks/payments', async (req, res) => {
             { code: "403", label: "Forbidden", description: "Merchant account is inactive." },
             { code: "404", label: "Not Found", description: "Payment doesn't exist, or belongs to a different merchant." },
             { code: "429", label: "Too Many Requests", description: "Rate limit exceeded — back off and retry." },
-            { code: "502", label: "Bad Gateway", description: "The payment provider (e.g. Cashi) returned an error." },
-            { code: "503", label: "Service Unavailable", description: "No healthy provider available for this payment method right now." },
+            { code: "502", label: "Bad Gateway", description: "The payment provider (e.g. Cashi) answered with an error or an invalid response. Safe to retry with the same Idempotency-Key." },
+            { code: "503", label: "Service Unavailable", description: "No provider is available for this payment method right now, or it could not be reached." },
+            { code: "504", label: "Gateway Timeout", description: "The payment provider did not answer in time. Safe to retry with the same Idempotency-Key." },
           ]}
         />
       </Section>
