@@ -48,6 +48,7 @@ export type MerchantDashboardSummary = {
   pending_payments: number;
   failed_payments: number;
   expired_payments: number;
+  refunded_payments: number;
   paid_amount: number;
 };
 
@@ -102,6 +103,7 @@ export type MerchantChartDaily = {
   failed: number;
   expired: number;
   cancelled: number;
+  refunded: number;
   paid_amount: number;
 };
 

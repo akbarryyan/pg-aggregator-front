@@ -10,6 +10,7 @@ export type DashboardSummary = {
   paid_payments: number;
   expired_payments: number;
   failed_payments: number;
+  refunded_payments: number;
   total_merchants: number;
   paid_amount: number;
   webhook_events: number;
@@ -149,6 +150,7 @@ export type DashboardDailyPoint = {
   failed: number;
   expired: number;
   cancelled: number;
+  refunded: number;
   paid_amount: number;
 };
 
@@ -401,6 +403,7 @@ export type AdminNotification = {
     | "webhook_pending"
     | "payment_failed"
     | "payment_expired"
+    | "payout_requested"
     | "info";
   title: string;
   body: string;

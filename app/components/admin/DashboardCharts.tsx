@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "#ef4444",
   expired: "#94a3b8",
   cancelled: "#8b5cf6",
+  refunded: "#3b9eff",
 };
 
 const SERIES = {
@@ -31,6 +32,7 @@ const SERIES = {
   pending: "#f59e0b",
   failed: "#ef4444",
   expired: "#94a3b8",
+  refunded: "#3b9eff",
   total: "#3b9eff",
   amount: "#ff5e16",
 };
@@ -240,11 +242,12 @@ export default function DashboardCharts({ data }: { data: DashboardChartsData })
                 <Bar dataKey="paid" name="Paid" stackId="a" fill={SERIES.paid} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="pending" name="Pending" stackId="a" fill={SERIES.pending} />
                 <Bar dataKey="failed" name="Failed" stackId="a" fill={SERIES.failed} />
+                <Bar dataKey="expired" name="Expired" stackId="a" fill={SERIES.expired} />
                 <Bar
-                  dataKey="expired"
-                  name="Expired"
+                  dataKey="refunded"
+                  name="Refunded"
                   stackId="a"
-                  fill={SERIES.expired}
+                  fill={SERIES.refunded}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

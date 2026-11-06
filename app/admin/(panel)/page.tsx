@@ -119,6 +119,12 @@ export default function AdminDashboardPage() {
           href: "/admin/payments?status=failed",
         },
         {
+          label: "Refunded",
+          value: (summary.refunded_payments ?? 0).toLocaleString("id-ID"),
+          tone: "text-[#1f6fb2]",
+          href: "/admin/payments?status=refunded",
+        },
+        {
           label: "Paid amount",
           value: formatIDR(summary.paid_amount),
           tone: "text-[#1f2a37]",

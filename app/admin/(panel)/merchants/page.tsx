@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import CreateMerchantDrawer from "@/app/components/admin/CreateMerchantDrawer";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import { fetchAllAdminBalances, type AdminMerchantBalance } from "@/lib/admin-payouts";
 import {
   exportAdminMerchants,
   fetchAdminMerchants,
@@ -37,6 +38,7 @@ import {
   Card,
   EmptyState,
   formatDateTime,
+  formatIDR,
   LoadingBlock,
   PageHeader,
   TableShell,
@@ -85,6 +87,8 @@ export default function AdminMerchantsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [balances, setBalances] = useState<Map<string, AdminMerchantBalance> | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -126,6 +130,25 @@ export default function AdminMerchantsPage() {
       cancelled = true;
     };
   }, [status, search, page, pageSize, refreshKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllAdminBalances()
+      .then((m) => {
+        if (cancelled) return;
+        setBalances(m);
+        setBalanceError(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBalances(null);
+          setBalanceError(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
@@ -281,6 +304,19 @@ export default function AdminMerchantsPage() {
         ) : items.length === 0 ? (
           <EmptyState message="No merchants found." />
         ) : (
+          <>
+          {balanceError && (
+            <div className="flex items-center justify-between gap-3 border-b border-[#eef2f6] px-5 py-2.5 text-[12.5px] text-[#e85d3b]">
+              <span>Balance unavailable.</span>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="font-semibold underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
           <TableShell>
             <table className="w-full min-w-200 text-left text-[12.5px]">
               <thead>
@@ -288,6 +324,7 @@ export default function AdminMerchantsPage() {
                   <th className="px-5 py-3">Business</th>
                   <th className="px-5 py-3">Owner</th>
                   <th className="px-5 py-3">Contact</th>
+                  <th className="px-5 py-3">Balance</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Created</th>
                 </tr>
@@ -315,6 +352,23 @@ export default function AdminMerchantsPage() {
                         </p>
                       )}
                     </td>
+                    <td className="px-5 py-3.5 font-medium">
+                      {(() => {
+                        const b = balances?.get(m.id);
+                        if (!b) {
+                          return (
+                            <span className="text-[#8a97a8]">
+                              {balanceError ? "Unavailable" : "—"}
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className={b.balance < 0 ? "text-[#e85d3b]" : "text-[#1f2a37]"}>
+                            {formatIDR(b.balance)}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-5 py-3.5">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
@@ -334,6 +388,7 @@ export default function AdminMerchantsPage() {
               </tbody>
             </table>
           </TableShell>
+          </>
         )}
 
         {!loading && total > 0 && (

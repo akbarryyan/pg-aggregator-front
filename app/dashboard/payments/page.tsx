@@ -52,6 +52,7 @@ const STATUS_OPTIONS = [
   { value: "paid", label: "Paid" },
   { value: "expired", label: "Expired" },
   { value: "failed", label: "Failed" },
+  { value: "refunded", label: "Refunded" },
 ];
 
 const PAGE_SIZE_OPTIONS = [
@@ -60,7 +61,7 @@ const PAGE_SIZE_OPTIONS = [
   { value: "50", label: "50 / page" },
 ];
 
-const VALID = new Set(["pending", "paid", "expired", "failed", "cancelled"]);
+const VALID = new Set(["pending", "paid", "expired", "failed", "cancelled", "refunded"]);
 
 export default function MerchantPaymentsPage() {
   const searchParams = useSearchParams();

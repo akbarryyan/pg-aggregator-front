@@ -52,6 +52,7 @@ const STATUS_OPTIONS = [
   { value: "expired", label: "Expired" },
   { value: "failed", label: "Failed" },
   { value: "cancelled", label: "Cancelled" },
+  { value: "refunded", label: "Refunded" },
 ];
 
 const PAGE_SIZE_OPTIONS = [
@@ -84,6 +85,7 @@ const VALID_STATUS = new Set([
   "expired",
   "failed",
   "cancelled",
+  "refunded",
 ]);
 
 export default function AdminPaymentsPage() {

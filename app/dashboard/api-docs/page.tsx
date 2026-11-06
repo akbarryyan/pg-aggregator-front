@@ -238,7 +238,7 @@ export default function ApiDocsPage() {
 
         <ParamTable
           rows={[
-            { field: "amount", type: "integer", required: true, description: "Amount in IDR (whole rupiah, no decimals). This is the nominal amount of the payment. If your account is set so customers bear the fee, a provider fee is added on top (see fee_amount / total_amount in the response)." },
+            { field: "amount", type: "integer", required: true, description: "Amount in IDR (whole rupiah, no decimals), from 1 up to 1000000000000 (larger or non-positive values are rejected with 400). This is the nominal amount of the payment. If your account is set so customers bear the fee, a provider fee is added on top (see fee_amount / total_amount in the response)." },
             { field: "description", type: "string", required: true, description: "Shown to the customer on the checkout page." },
             { field: "currency", type: "string", required: false, description: 'Defaults to "IDR" — the only supported currency right now.' },
             { field: "payment_method", type: "string", required: false, description: 'Defaults to "qris" — the only supported method right now.' },
@@ -370,6 +370,7 @@ export default function ApiDocsPage() {
             { s: "expired", d: "Not paid before expires_at. Terminal, except that a late payment can still turn it into paid." },
             { s: "failed", d: "Provider or internal error prevented completion. Terminal." },
             { s: "cancelled", d: "Cancelled before payment. Terminal." },
+            { s: "refunded", d: "A paid payment that was fully refunded by the platform admin. Terminal; you receive a payment.refunded webhook. A partial refund leaves the payment paid." },
           ].map((row) => (
             <div
               key={row.s}
@@ -424,8 +425,23 @@ export default function ApiDocsPage() {
 
         <p className="text-[13px] text-[#3d4b5c]">
           <code className="font-mono">event</code> is one of{" "}
-          <code className="font-mono">payment.paid</code> or{" "}
-          <code className="font-mono">payment.expired</code>.
+          <code className="font-mono">payment.paid</code>,{" "}
+          <code className="font-mono">payment.expired</code>,{" "}
+          <code className="font-mono">payment.failed</code>,{" "}
+          <code className="font-mono">payment.cancelled</code> or{" "}
+          <code className="font-mono">payment.refunded</code>.
+        </p>
+
+        <p className="text-[13px] text-[#3d4b5c]">
+          <code className="font-mono">payment.refunded</code> is sent only
+          when a payment is <strong>fully</strong> refunded (never for a
+          partial refund), with{" "}
+          <code className="font-mono">status: &quot;refunded&quot;</code>. The
+          payload carries the payment&apos;s original{" "}
+          <code className="font-mono">amount</code>,{" "}
+          <code className="font-mono">fee_amount</code> and{" "}
+          <code className="font-mono">total_amount</code>; refund details are
+          not included. Treat it as the signal to reverse the order.
         </p>
 
         <p className="text-[13px] text-[#3d4b5c]">
@@ -531,7 +547,7 @@ app.post('/webhooks/payments', async (req, res) => {
         />
         <StatusCodeTable
           rows={[
-            { code: "400", label: "Bad Request", description: "Invalid request body or validation failure (bad amount, missing description, invalid callback_url, etc)." },
+            { code: "400", label: "Bad Request", description: "Invalid request body or validation failure (amount outside 1–1000000000000, missing description, invalid callback_url, etc)." },
             { code: "401", label: "Unauthorized", description: "Missing, invalid, or revoked API key." },
             { code: "403", label: "Forbidden", description: "Merchant account is inactive." },
             { code: "404", label: "Not Found", description: "Payment doesn't exist, or belongs to a different merchant." },

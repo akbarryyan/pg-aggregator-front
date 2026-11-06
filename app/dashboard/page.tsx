@@ -93,6 +93,12 @@ export default function MerchantDashboardPage() {
           href: "/dashboard/payments?status=failed",
         },
         {
+          label: "Refunded",
+          value: summary.refunded_payments.toLocaleString("id-ID"),
+          tone: "text-[#1f6fb2]",
+          href: "/dashboard/payments?status=refunded",
+        },
+        {
           label: "Paid amount",
           value: formatIDR(summary.paid_amount),
           tone: "text-[#1f2a37]",

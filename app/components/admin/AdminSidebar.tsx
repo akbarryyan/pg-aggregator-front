@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WalletIcon } from "lucide-react";
 import {
   IconChart,
   IconFile,
@@ -18,6 +19,7 @@ const navItems = [
   { label: "Dashboard", href: "/admin", icon: IconGrid },
   { label: "Merchants", href: "/admin/merchants", icon: IconUser },
   { label: "Payments", href: "/admin/payments", icon: IconTable },
+  { label: "Payouts", href: "/admin/payouts", icon: WalletIcon },
   { label: "Providers", href: "/admin/providers", icon: IconLayers },
   { label: "Routing", href: "/admin/routing", icon: IconRoute },
   { label: "Callbacks", href: "/admin/callbacks", icon: IconSend },

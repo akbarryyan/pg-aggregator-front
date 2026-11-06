@@ -9,6 +9,7 @@ import {
   CheckCircle2Icon,
   CircleAlertIcon,
   Clock3Icon,
+  WalletIcon,
 } from "lucide-react";
 import {
   fetchAdminNotifications,
@@ -55,6 +56,12 @@ function kindMeta(kind: AdminNotification["kind"]) {
         icon: Clock3Icon,
         tone: "bg-[#eef2f6] text-[#6b7c93]",
         label: "Payment expired",
+      };
+    case "payout_requested":
+      return {
+        icon: WalletIcon,
+        tone: "bg-[#fff7e6] text-[#c27a00]",
+        label: "Payout requested",
       };
     default:
       return {

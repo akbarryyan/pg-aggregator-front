@@ -47,6 +47,7 @@ export function StatusBadge({ status }: { status: string }) {
     expired: "bg-[#eef2f6] text-[#6b7c93]",
     failed: "bg-[#fff1ed] text-[#e85d3b]",
     cancelled: "bg-[#f3f0ff] text-[#7c3aed]",
+    refunded: "bg-[#e6f2fb] text-[#1f6fb2]",
   };
   const className = styles[status] ?? "bg-[#eef2f6] text-[#6b7c93]";
 

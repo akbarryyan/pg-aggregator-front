@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
+import ConfirmedActionDialog from "@/app/components/admin/ConfirmedActionDialog";
+import {
+  fetchPaymentRefunds,
+  refundPayment,
+  REFUND_REASON_MAX,
+  type AdminRefundSummary,
+} from "@/lib/admin-payouts";
 import {
   fetchAdminPayment,
   fetchAdminPaymentCallbacks,
@@ -12,6 +19,7 @@ import {
   type AdminLog,
   type AdminPayment,
 } from "@/lib/admin-api";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   EmptyState,
@@ -42,6 +50,10 @@ export default function AdminPaymentDetailPage() {
   const [events, setEvents] = useState<AdminLog[]>([]);
   const [callbacks, setCallbacks] = useState<AdminCallback[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refunds, setRefunds] = useState<AdminRefundSummary | null>(null);
+  const [refundsError, setRefundsError] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -55,10 +67,18 @@ export default function AdminPaymentDetailPage() {
           fetchAdminPaymentEvents(id),
           fetchAdminPaymentCallbacks(id).catch(() => ({ items: [] as AdminCallback[] })),
         ]);
+        // Refund info is optional context; a failure must not hide the payment.
+        let rfFailed = false;
+        const rf = await fetchPaymentRefunds(id).catch(() => {
+          rfFailed = true;
+          return null;
+        });
         if (!cancelled) {
           setPayment(data);
           setEvents(ev.items ?? []);
           setCallbacks(cb.items ?? []);
+          setRefunds(rf);
+          setRefundsError(rfFailed);
         }
       } catch (err) {
         if (!cancelled) {
@@ -75,7 +95,7 @@ export default function AdminPaymentDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, reloadKey]);
 
   return (
     <div className="w-full space-y-5">
@@ -111,7 +131,14 @@ export default function AdminPaymentDetailPage() {
                   {payment.description}
                 </p>
               </div>
-              <StatusBadge status={payment.status} />
+              <div className="flex items-center gap-3">
+                <StatusBadge status={payment.status} />
+                {refunds?.refundable && (
+                  <Button type="button" onClick={() => setRefundOpen(true)}>
+                    Refund
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -160,6 +187,85 @@ export default function AdminPaymentDetailPage() {
               <Field label="Updated" value={formatDateTime(payment.updated_at)} />
             </div>
           </Card>
+
+          {refundsError && payment.status === "paid" && (
+            <Card className="flex items-center justify-between gap-3 p-4 text-[13px] text-[#e85d3b]">
+              <span>Could not load refund information.</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setReloadKey((k) => k + 1)}
+              >
+                Retry
+              </Button>
+            </Card>
+          )}
+
+          {refunds && (refunds.items?.length ?? 0) > 0 && (
+            <Card className="p-5 sm:p-6">
+              <h3 className="text-[15px] font-semibold text-[#1f2a37]">
+                Refunds
+              </h3>
+              <p className="mt-1 text-[12.5px] text-[#8a97a8]">
+                Refunded {formatIDR(refunds.refunded_amount, payment.currency)}{" "}
+                of {formatIDR(refunds.merchant_net_amount, payment.currency)}{" "}
+                refundable · remaining{" "}
+                {formatIDR(refunds.remaining_refundable, payment.currency)}
+              </p>
+              <ul className="mt-4 space-y-2">
+                {(refunds.items ?? []).map((r) => (
+                  <li
+                    key={r.id}
+                    className="rounded-lg border border-[#eef2f6] bg-[#fbfcfe] px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[13px] font-semibold text-[#1f2a37]">
+                        {formatIDR(r.amount, payment.currency)}
+                      </p>
+                      <span className="text-[12px] text-[#8a97a8]">
+                        {formatDateTime(r.created_at)}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-words text-[12.5px] text-[#3d4b5c]">
+                      {r.reason}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {refundOpen && refunds && (
+            <ConfirmedActionDialog
+              open
+              onOpenChange={setRefundOpen}
+              title="Refund payment"
+              description={`Up to ${formatIDR(refunds.remaining_refundable, payment.currency)} can still be refunded.`}
+              warning="Refund is recorded only; return the money to the customer manually. The reason is visible to the merchant."
+              amount={{
+                label: "Amount (IDR)",
+                initial: refunds.remaining_refundable,
+                maxAbs: refunds.remaining_refundable,
+                hint: "Whole rupiah, greater than 0 and at most the remaining refundable amount.",
+              }}
+              text={{ label: "Reason", maxLength: REFUND_REASON_MAX }}
+              confirmLabel="Confirm refund"
+              destructive
+              summary={(v) =>
+                `Refund ${formatIDR(v.amount ?? 0, payment.currency)} of ${payment.reference}\nReason: ${v.text}`
+              }
+              onSubmit={async (v) => {
+                const res = await refundPayment(payment.id, v.amount ?? 0, v.text);
+                toast.success(
+                  res.payment_status === "refunded"
+                    ? "Payment fully refunded."
+                    : "Refund recorded.",
+                );
+                setReloadKey((k) => k + 1);
+              }}
+            />
+          )}
 
           {(payment.qris_data || payment.callback_url) && (
             <Card className="p-5 sm:p-6">

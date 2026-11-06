@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { CopyIcon, EyeIcon, EyeOffIcon, RefreshCwIcon } from "lucide-react";
+import { fetchBalance, savePayoutAccount } from "@/lib/merchant-balance";
 import {
   fetchMerchantBusiness,
   fetchMerchantWebhookSecret,
@@ -200,6 +201,156 @@ function WebhookSecretCard() {
   );
 }
 
+function PayoutAccountCard() {
+  const [loading, setLoading] = useState(true);
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolder, setAccountHolder] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inFlight = useRef(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await fetchBalance();
+        if (cancelled || !data.payout_account) return;
+        setBankName(data.payout_account.bank_name);
+        setAccountNumber(data.payout_account.account_number);
+        setAccountHolder(data.payout_account.account_holder);
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : "Failed to load payout account.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      const saved = await savePayoutAccount({
+        bank_name: bankName.trim(),
+        account_number: accountNumber.trim(),
+        account_holder: accountHolder.trim(),
+        password,
+      });
+      setBankName(saved.bank_name);
+      setAccountNumber(saved.account_number);
+      setAccountHolder(saved.account_holder);
+      toast.success("Payout account saved.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update payout account.",
+      );
+    } finally {
+      // Never keep the password around after an attempt.
+      setPassword("");
+      inFlight.current = false;
+      setSaving(false);
+    }
+  }
+
+  const inputClass =
+    "h-10 rounded-lg border border-[#e8eef4] px-3 text-[13px] outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-[#3b9eff]/15";
+  const labelClass =
+    "text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]";
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <h2 className="text-[15px] font-semibold text-[#1f2a37]">
+        Payout account
+      </h2>
+      <p className="mt-1 text-[13px] text-[#8a97a8]">
+        The bank or e-wallet account your payouts are sent to. Changing it
+        requires your account password.
+      </p>
+      {loading ? (
+        <LoadingBlock />
+      ) : (
+        <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>Bank / e-wallet name</span>
+              <input
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                className={inputClass}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>Account number</span>
+              <input
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                inputMode="numeric"
+                pattern="[0-9]{5,30}"
+                maxLength={30}
+                autoComplete="off"
+                className={inputClass}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>Account holder</span>
+              <input
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+                className={inputClass}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>Account password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                autoComplete="current-password"
+                className={inputClass}
+                required
+              />
+            </label>
+          </div>
+          {error && (
+            <p role="alert" className="text-[12.5px] text-[#e85d3b]">
+              {error}
+            </p>
+          )}
+          <Button
+            type="submit"
+            disabled={saving}
+            className="h-10 rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048]"
+          >
+            {saving ? "Saving..." : "Save payout account"}
+          </Button>
+        </form>
+      )}
+    </Card>
+  );
+}
+
 export default function MerchantSettingsPage() {
   const [business, setBusiness] = useState<MerchantBusiness | null>(null);
   const [loading, setLoading] = useState(true);
@@ -347,6 +498,8 @@ export default function MerchantSettingsPage() {
           </form>
         </Card>
       )}
+
+      <PayoutAccountCard />
 
       <WebhookSecretCard />
     </div>

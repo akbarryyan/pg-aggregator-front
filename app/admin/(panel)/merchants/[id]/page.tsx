@@ -8,6 +8,18 @@ import { PencilIcon, PowerIcon } from "lucide-react";
 import EditMerchantDrawer from "@/app/components/admin/EditMerchantDrawer";
 import MerchantAPIKeysSection from "@/app/components/admin/MerchantAPIKeysSection";
 import MerchantProviderConfigSection from "@/app/components/admin/MerchantProviderConfigSection";
+import ConfirmedActionDialog from "@/app/components/admin/ConfirmedActionDialog";
+import PagerBar from "@/app/components/admin/PagerBar";
+import { usePagination } from "@/lib/use-pagination";
+import {
+  adjustMerchantBalance,
+  fetchAllAdminBalances,
+  fetchAdminMerchantLedger,
+  ADJUSTMENT_MAX_ABS,
+  ADJUSTMENT_REASON_MAX,
+  type AdminLedgerEntry,
+  type AdminMerchantBalance,
+} from "@/lib/admin-payouts";
 import {
   fetchAdminMerchant,
   fetchAdminMerchantPayments,
@@ -35,6 +47,16 @@ import {
   TableShell,
 } from "../../../../components/admin/ui";
 
+const LEDGER_PAGE_SIZE = 20;
+
+const ENTRY_LABEL: Record<string, string> = {
+  payment_credit: "Payment credit",
+  refund_debit: "Refund",
+  payout_debit: "Payout",
+  payout_reversal: "Payout reversal",
+  adjustment: "Adjustment",
+};
+
 export default function AdminMerchantDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -45,6 +67,68 @@ export default function AdminMerchantDetailPage() {
   const [toggling, setToggling] = useState(false);
   const [feeBearerDraft, setFeeBearerDraft] = useState<FeeBearer>("merchant");
   const [savingFee, setSavingFee] = useState(false);
+  const [balance, setBalance] = useState<AdminMerchantBalance | null>(null);
+  const [balanceKey, setBalanceKey] = useState(0);
+  const [balanceError, setBalanceError] = useState(false);
+  const [ledgerError, setLedgerError] = useState("");
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [entries, setEntries] = useState<AdminLedgerEntry[]>([]);
+  const [ledgerTotal, setLedgerTotal] = useState(0);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
+  const ledgerPages = Math.max(1, Math.ceil(ledgerTotal / LEDGER_PAGE_SIZE));
+  const [ledgerPage, setLedgerPage] = usePagination([id], ledgerPages);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    async function loadBalance() {
+      setBalanceError(false);
+      try {
+        const all = await fetchAllAdminBalances();
+        if (!cancelled) setBalance(all.get(id) ?? null);
+      } catch {
+        if (!cancelled) {
+          setBalance(null);
+          setBalanceError(true);
+        }
+      }
+    }
+    void loadBalance();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, balanceKey]);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    async function loadLedger() {
+      setLedgerLoading(true);
+      setLedgerError("");
+      try {
+        const res = await fetchAdminMerchantLedger(
+          id,
+          LEDGER_PAGE_SIZE,
+          (ledgerPage - 1) * LEDGER_PAGE_SIZE,
+        );
+        if (cancelled) return;
+        setEntries(res.items ?? []);
+        setLedgerTotal(res.total ?? 0);
+      } catch (err) {
+        if (!cancelled) {
+          setLedgerError(
+            err instanceof Error ? err.message : "Failed to load balance history.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLedgerLoading(false);
+      }
+    }
+    void loadLedger();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, ledgerPage, balanceKey]);
 
   useEffect(() => {
     if (!id) return;
@@ -292,6 +376,147 @@ export default function AdminMerchantDetailPage() {
               </Button>
             </div>
           </Card>
+
+          <Card className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-[15px] font-semibold text-[#1f2a37]">
+                  Balance
+                </h3>
+                <p
+                  className={`mt-2 text-[22px] font-semibold ${
+                    balance && balance.balance < 0
+                      ? "text-[#e85d3b]"
+                      : "text-[#1f2a37]"
+                  }`}
+                >
+                  {balance ? formatIDR(balance.balance) : balanceError ? "Balance unavailable" : "—"}
+                </p>
+                {balanceError && (
+                  <button
+                    type="button"
+                    onClick={() => setBalanceKey((k) => k + 1)}
+                    className="mt-1 text-[12.5px] font-semibold text-[#e85d3b] underline"
+                  >
+                    Retry
+                  </button>
+                )}
+                {balance && balance.open_payout_amount > 0 && (
+                  <p className="mt-1 text-[12.5px] text-[#c27a00]">
+                    Open payout request: {formatIDR(balance.open_payout_amount)}{" "}
+                    <Link
+                      href="/admin/payouts"
+                      className="font-semibold underline"
+                    >
+                      View payouts
+                    </Link>
+                  </p>
+                )}
+              </div>
+              <Button type="button" onClick={() => setAdjustOpen(true)}>
+                Adjust balance
+              </Button>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="border-b border-[#eef2f6] px-5 py-4">
+              <h3 className="text-[15px] font-semibold text-[#1f2a37]">
+                Balance history
+              </h3>
+            </div>
+            {ledgerLoading ? (
+              <LoadingBlock />
+            ) : ledgerError ? (
+              <div className="flex items-center justify-between gap-3 px-5 py-6 text-[13px] text-[#e85d3b]">
+                <span>{ledgerError}</span>
+                <button
+                  type="button"
+                  onClick={() => setBalanceKey((k) => k + 1)}
+                  className="font-semibold underline"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : entries.length === 0 ? (
+              <EmptyState message="No balance movements yet." />
+            ) : (
+              <TableShell>
+                <table className="w-full min-w-[640px] text-left text-[12.5px]">
+                  <thead>
+                    <tr className="border-b border-[#eef2f6] text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
+                      <th className="px-5 py-3">Time</th>
+                      <th className="px-5 py-3">Type</th>
+                      <th className="px-5 py-3">Amount</th>
+                      <th className="px-5 py-3">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((e) => (
+                      <tr
+                        key={e.id}
+                        className="border-b border-[#f3f6f9] text-[#3d4b5c] last:border-0"
+                      >
+                        <td className="px-5 py-3.5 text-[#6b7c93]">
+                          {formatDateTime(e.created_at)}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {ENTRY_LABEL[e.entry_type] ?? e.entry_type}
+                        </td>
+                        <td
+                          className={`px-5 py-3.5 font-medium ${
+                            e.amount < 0 ? "text-[#e85d3b]" : "text-[#2f9e5a]"
+                          }`}
+                        >
+                          {e.amount > 0 ? "+" : ""}
+                          {formatIDR(e.amount)}
+                        </td>
+                        <td className="px-5 py-3.5 break-words">
+                          {e.note || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableShell>
+            )}
+            {!ledgerLoading && (
+              <PagerBar
+                page={ledgerPage}
+                totalPages={ledgerPages}
+                total={ledgerTotal}
+                onPage={setLedgerPage}
+              />
+            )}
+          </Card>
+
+          {adjustOpen && (
+            <ConfirmedActionDialog
+              open
+              onOpenChange={setAdjustOpen}
+              title="Adjust balance"
+              description="Enter a positive number to credit the merchant or a negative number to debit."
+              warning="This changes the merchant's balance. The reason is visible to the merchant."
+              amount={{
+                label: "Amount (IDR, signed)",
+                allowNegative: true,
+                maxAbs: ADJUSTMENT_MAX_ABS,
+                hint: "Whole rupiah, for example 25000 or -25000.",
+              }}
+              text={{ label: "Reason", maxLength: ADJUSTMENT_REASON_MAX }}
+              confirmLabel="Confirm adjustment"
+              summary={(v) =>
+                `Adjust ${merchant.business_name} balance by ${
+                  (v.amount ?? 0) > 0 ? "+" : ""
+                }${formatIDR(v.amount ?? 0)}\nReason: ${v.text}`
+              }
+              onSubmit={async (v) => {
+                await adjustMerchantBalance(merchant.id, v.amount ?? 0, v.text);
+                toast.success("Balance adjusted.");
+                setBalanceKey((k) => k + 1);
+              }}
+            />
+          )}
 
           <MerchantAPIKeysSection merchantId={merchant.id} />
 

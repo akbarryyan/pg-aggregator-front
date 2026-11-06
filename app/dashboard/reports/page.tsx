@@ -40,8 +40,9 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "#e85d3b",
   expired: "#6b7c93",
   cancelled: "#7c3aed",
+  refunded: "#1f6fb2",
 };
-const STATUS_ORDER = ["paid", "pending", "failed", "expired", "cancelled"];
+const STATUS_ORDER = ["paid", "pending", "failed", "expired", "cancelled", "refunded"];
 const REVENUE_COLOR = "#ff5e16";
 
 const RANGE_OPTIONS = [7, 30, 90];
@@ -148,10 +149,11 @@ function buildCsv(daily: MerchantChartDaily[], environment: string): string {
     "failed",
     "expired",
     "cancelled",
+    "refunded",
     "paid_amount",
   ];
   const rows = daily.map((d) =>
-    [d.date, d.total, d.paid, d.pending, d.failed, d.expired, d.cancelled, d.paid_amount].join(","),
+    [d.date, d.total, d.paid, d.pending, d.failed, d.expired, d.cancelled, d.refunded, d.paid_amount].join(","),
   );
   return [`# environment: ${environment}`, header.join(","), ...rows].join("\n");
 }
@@ -397,7 +399,7 @@ export default function MerchantReportsPage() {
               </p>
             </div>
             <TableShell>
-              <table className="w-full min-w-150 text-left text-[12.5px]">
+              <table className="w-full min-w-225 text-left text-[12.5px]">
                 <thead>
                   <tr className="border-b border-[#eef2f6] text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                     <th className="px-5 py-3">Date</th>
@@ -407,6 +409,7 @@ export default function MerchantReportsPage() {
                     <th className="px-5 py-3">Failed</th>
                     <th className="px-5 py-3">Expired</th>
                     <th className="px-5 py-3">Cancelled</th>
+                    <th className="px-5 py-3">Refunded</th>
                     <th className="px-5 py-3">Revenue</th>
                   </tr>
                 </thead>
@@ -420,6 +423,7 @@ export default function MerchantReportsPage() {
                       <td className="px-5 py-3">{d.failed}</td>
                       <td className="px-5 py-3">{d.expired}</td>
                       <td className="px-5 py-3">{d.cancelled}</td>
+                      <td className="px-5 py-3">{d.refunded}</td>
                       <td className="px-5 py-3 font-medium text-[#1f2a37]">
                         {formatIDR(d.paid_amount)}
                       </td>
