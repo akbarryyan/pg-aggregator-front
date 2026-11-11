@@ -135,7 +135,7 @@ function WebhookSecretCard() {
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className="mt-3 flex items-center gap-1.5 text-[12.5px] font-semibold text-[#e85d3b] hover:underline"
+            className="mt-3 flex items-center gap-1.5 text-[12.5px] font-semibold text-[#e85d3b] hover:underline max-lg:min-h-9"
           >
             <RefreshCwIcon className="size-3.5" />
             Regenerate secret
@@ -341,7 +341,7 @@ function PayoutAccountCard() {
           <Button
             type="submit"
             disabled={saving}
-            className="h-10 rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048]"
+            className="h-10 w-full rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048] sm:w-auto"
           >
             {saving ? "Saving..." : "Save payout account"}
           </Button>
@@ -483,7 +483,7 @@ export default function MerchantSettingsPage() {
             {business && (
               <p className="text-[12.5px] text-[#8a97a8]">
                 Login email (account):{" "}
-                <span className="font-medium text-[#3d4b5c]">
+                <span className="break-all font-medium text-[#3d4b5c]">
                   {business.email}
                 </span>
               </p>
@@ -491,7 +491,7 @@ export default function MerchantSettingsPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="h-10 rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048]"
+              className="h-10 w-full rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048] sm:w-auto"
             >
               {saving ? "Saving..." : "Save settings"}
             </Button>

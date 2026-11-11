@@ -154,7 +154,7 @@ export default function NewPaymentLinkPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                   Min amount <span className="normal-case text-[#b7c0cc]">(optional)</span>
@@ -183,7 +183,7 @@ export default function NewPaymentLinkPage() {
                   placeholder={String(PLATFORM_MAX_AMOUNT)}
                 />
               </div>
-              <p className="col-span-2 text-[11.5px] text-[#8a97a8]">
+              <p className="text-[11.5px] text-[#8a97a8] sm:col-span-2">
                 Leave blank to allow the full platform range: Rp
                 {PLATFORM_MIN_AMOUNT.toLocaleString("id-ID")}–Rp
                 {PLATFORM_MAX_AMOUNT.toLocaleString("id-ID")}.

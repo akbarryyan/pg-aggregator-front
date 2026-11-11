@@ -8,6 +8,7 @@ import {
   CheckCircle2Icon,
   CircleAlertIcon,
   Clock3Icon,
+  XIcon,
 } from "lucide-react";
 import {
   fetchMerchantNotifications,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/merchant-api";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -94,8 +96,17 @@ export default function MerchantNotificationsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="ml-auto h-full w-full max-w-md rounded-none border-l border-[#e8eef4] bg-white">
-        <DrawerHeader className="border-b border-[#eef2f6] text-left">
+      <DrawerContent className="ml-auto h-full max-w-md data-[vaul-drawer-direction=right]:w-[85%] rounded-none border-l border-[#e8eef4] bg-white">
+        <DrawerClose asChild>
+          <button
+            type="button"
+            aria-label="Close notifications"
+            className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-[#6b7c93] transition hover:bg-[#f4f7fb] hover:text-[#06163a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5e16]/40"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </DrawerClose>
+        <DrawerHeader className="border-b border-[#eef2f6] pr-14 text-left">
           <DrawerTitle className="text-[#1f2a37]">Notifications</DrawerTitle>
           <DrawerDescription className="text-[#8a97a8]">
             Alerts for {environment}: failed callbacks, failed & expired payments.
@@ -122,7 +133,7 @@ export default function MerchantNotificationsDrawer({
                       <p className="text-[13px] font-semibold text-[#1f2a37]">
                         {n.title}
                       </p>
-                      <p className="mt-0.5 text-[12.5px] text-[#6b7c93]">{n.body}</p>
+                      <p className="mt-0.5 break-words text-[12.5px] text-[#6b7c93]">{n.body}</p>
                       <p className="mt-1 text-[11px] text-[#8a97a8]">
                         {formatDateTime(n.created_at)} · {meta.label}
                       </p>

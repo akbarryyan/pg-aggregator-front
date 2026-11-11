@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FlaskConicalIcon } from "lucide-react";
 import {
   IconBook,
   IconChart,
@@ -17,6 +18,7 @@ import {
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: IconGrid },
   { label: "Payments", href: "/dashboard/payments", icon: IconTable },
+  { label: "Test Payment", href: "/dashboard/test-payment", icon: FlaskConicalIcon },
   { label: "Payment Links", href: "/dashboard/payment-links", icon: IconSend },
   { label: "Balance", href: "/dashboard/balance", icon: IconDollar },
   { label: "Reports", href: "/dashboard/reports", icon: IconChart },
@@ -26,21 +28,25 @@ const navItems = [
   { label: "Settings", href: "/dashboard/settings", icon: IconUser },
 ];
 
-type Props = { collapsed: boolean };
+type Props = { collapsed: boolean; mobileOpen: boolean; onNavigate: () => void };
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function MerchantSidebar({ collapsed }: Props) {
+export default function MerchantSidebar({ collapsed, mobileOpen, onNavigate }: Props) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`admin-sidebar sticky top-0 z-40 flex h-screen shrink-0 flex-col bg-[#06163a] text-white transition-[width] duration-200 ease-in-out ${
-        collapsed ? "w-18" : "w-65"
-      }`}
+      className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex h-screen max-lg:h-dvh w-65 shrink-0 flex-col bg-[#06163a] text-white transition-[translate,width,visibility] duration-200 ease-in-out lg:visible lg:sticky lg:inset-auto lg:top-0 lg:z-40 lg:translate-x-0 ${
+        mobileOpen ? "visible translate-x-0 shadow-xl" : "invisible -translate-x-full"
+      } ${collapsed ? "lg:w-18" : "lg:w-65"}`}
+      id="app-sidebar"
+      role={mobileOpen ? "dialog" : undefined}
+      aria-modal={mobileOpen ? true : undefined}
+      aria-label="Sidebar"
     >
       <div
         className={`flex h-16 shrink-0 items-center ${
@@ -65,7 +71,7 @@ export default function MerchantSidebar({ collapsed }: Props) {
         </span>
       </div>
 
-      <nav className="admin-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-0 pb-6 pt-1">
+      <nav aria-label="Main navigation" className="admin-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-0 pb-6 pt-1">
         <ul className="flex flex-col">
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.href);
@@ -85,6 +91,7 @@ export default function MerchantSidebar({ collapsed }: Props) {
                 <Link
                   href={item.href}
                   className={className}
+                  onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                 >
                   {active && (

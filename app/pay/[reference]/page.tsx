@@ -86,7 +86,7 @@ export default function PublicPayPage() {
       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#e8eef4] bg-white shadow-[0_16px_48px_rgba(16,38,73,0.08)]">
         <div className="bg-[#06163a] px-6 py-5 text-white">
           <p className="text-[13px] font-medium text-white/70">whuzpay · Checkout</p>
-          <h1 className="mt-1 text-[20px] font-semibold tracking-tight">
+          <h1 className="mt-1 break-words text-[20px] font-semibold tracking-tight">
             {payment?.description || "Payment"}
           </h1>
         </div>
@@ -99,17 +99,17 @@ export default function PublicPayPage() {
           ) : payment ? (
             <>
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-[12px] text-[#8a97a8]">
                     {hasFee ? "Total to pay" : "Amount"}
                   </p>
-                  <p className="mt-0.5 text-[28px] font-bold tracking-tight text-[#1f2a37]">
+                  <p className="mt-0.5 break-words text-[28px] font-bold tracking-tight text-[#1f2a37]">
                     {formatIDR(
                       hasFee ? payment.total_amount : payment.amount,
                       payment.currency,
                     )}
                   </p>
-                  <p className="mt-1 text-[12px] text-[#8a97a8]">
+                  <p className="mt-1 break-all text-[12px] text-[#8a97a8]">
                     Ref · {payment.reference}
                   </p>
                 </div>

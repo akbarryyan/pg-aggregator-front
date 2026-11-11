@@ -106,12 +106,12 @@ export default function MerchantPaymentDetailPage() {
         <>
           <Card className="p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[12px] text-[#8a97a8]">Reference</p>
-                <h2 className="mt-1 text-[18px] font-semibold text-[#1f2a37]">
+                <h2 className="mt-1 break-all text-[18px] font-semibold text-[#1f2a37]">
                   {payment.reference}
                 </h2>
-                <p className="mt-1 text-[13px] text-[#6b7c93]">
+                <p className="mt-1 break-words text-[13px] text-[#6b7c93]">
                   {payment.description}
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function MerchantPaymentDetailPage() {
                   <img
                     src={payment.qris_data}
                     alt="QRIS"
-                    className="max-h-52 rounded-xl border border-[#eef2f6]"
+                    className="max-h-52 max-w-full rounded-xl border border-[#eef2f6]"
                   />
                 ) : (
                   <pre className="max-h-48 max-w-full overflow-auto rounded-lg bg-[#f8fafc] p-3 text-[11px] break-all text-[#3d4b5c]">

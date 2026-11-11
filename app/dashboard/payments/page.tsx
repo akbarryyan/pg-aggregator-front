@@ -6,13 +6,11 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   DownloadIcon,
-  PlusIcon,
   RefreshCwIcon,
   SearchIcon,
 } from "lucide-react";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
 import {
-  createMerchantPayment,
   exportMerchantPayments,
   fetchMerchantPayments,
   type MerchantPayment,
@@ -79,7 +77,6 @@ export default function MerchantPaymentsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [creating, setCreating] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -96,6 +93,14 @@ export default function MerchantPaymentsPage() {
     setPrevStatusFromUrl(statusFromUrl);
     if (VALID.has(statusFromUrl)) setStatus(statusFromUrl);
   }
+
+  // Apply the typed search shortly after the last keystroke (no Search button).
+  useEffect(() => {
+    const next = searchInput.trim();
+    if (next === search) return;
+    const timer = window.setTimeout(() => setSearch(next), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, search]);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,26 +134,6 @@ export default function MerchantPaymentsPage() {
       cancelled = true;
     };
   }, [status, search, dateFrom, dateTo, page, pageSize, refreshKey, environment]);
-
-  async function handleQuickCreate() {
-    setCreating(true);
-    try {
-      const p = await createMerchantPayment({
-        amount: 15000,
-        description: "Quick test payment from dashboard",
-        payment_method: "qris",
-        environment,
-      });
-      toast.success(`Payment ${p.reference} created (${environment}).`);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to create payment.",
-      );
-    } finally {
-      setCreating(false);
-    }
-  }
 
   async function handleExport() {
     setExporting(true);
@@ -228,8 +213,12 @@ export default function MerchantPaymentsPage() {
               className="w-full sm:w-42"
             />
 
+            {/* Live search: the table filters as you type (debounced); Enter
+                applies immediately. The field stretches up to the neighbouring
+                controls. */}
             <form
-              className="flex w-full flex-1 gap-2 sm:max-w-md"
+              role="search"
+              className="flex w-full min-w-0 flex-1 lg:w-auto lg:basis-56"
               onSubmit={(e) => {
                 e.preventDefault();
                 setSearch(searchInput.trim());
@@ -238,18 +227,14 @@ export default function MerchantPaymentsPage() {
               <div className="relative w-full">
                 <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#8a97a8]" />
                 <input
+                  type="search"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search reference, customer..."
+                  aria-label="Search payments"
                   className="h-9 w-full rounded-full border border-[#e8eef4] bg-[#f8fafc] pr-3 pl-9 text-[13px] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
                 />
               </div>
-              <button
-                type="submit"
-                className="h-9 shrink-0 rounded-full bg-[#ff5e16] px-5 text-[12.5px] font-semibold text-white"
-              >
-                Search
-              </button>
             </form>
           </div>
 
@@ -264,25 +249,6 @@ export default function MerchantPaymentsPage() {
               />
 
               <div className="flex items-center gap-1.5 pt-5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      disabled={creating}
-                      className="size-9 rounded-full border-[#e8eef4] bg-white text-[#3d4b5c] shadow-none hover:bg-[#f4f7fb]"
-                      aria-label="New test payment"
-                      onClick={() => void handleQuickCreate()}
-                    >
-                      <PlusIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={6}>
-                    New test payment
-                  </TooltipContent>
-                </Tooltip>
-
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -409,7 +375,7 @@ export default function MerchantPaymentsPage() {
         )}
 
         {!loading && total > 0 && (
-          <div className="flex items-center justify-between border-t border-[#eef2f6] px-4 py-3">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-4 py-3">
             <p className="text-[12.5px] text-[#8a97a8]">
               Page {page} of {totalPages}
             </p>
@@ -430,7 +396,7 @@ export default function MerchantPaymentsPage() {
                 {pageItems.map((item, idx) =>
                   item === "e" ? (
                     <PaginationItem key={`e-${idx}`}>
-                      <span className="px-2 text-[#8a97a8] rounded-full">…</span>
+                      <span className="rounded-full px-2 text-[#8a97a8] max-sm:hidden">…</span>
                     </PaginationItem>
                   ) : (
                     <PaginationItem key={item}>

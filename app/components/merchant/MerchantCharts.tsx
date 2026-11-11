@@ -71,7 +71,7 @@ export default function MerchantChartsPanel({
               key={d}
               type="button"
               onClick={() => onDaysChange(d)}
-              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+              className={`rounded-full px-3 py-2.5 text-[12px] font-semibold transition lg:py-1.5 ${
                 days === d
                   ? "bg-[#06163a] text-white"
                   : "text-[#6b7c93] hover:bg-[#f4f7fb]"

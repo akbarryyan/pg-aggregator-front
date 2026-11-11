@@ -72,7 +72,7 @@ function PagerBar({
 }) {
   if (total === 0) return null;
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-[#eef2f6] px-5 py-3 text-[12.5px] text-[#6b7c93]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-5 py-3 text-[12.5px] text-[#6b7c93]">
       <span>
         Page {page} of {totalPages} · {total.toLocaleString("id-ID")} total
       </span>
@@ -311,7 +311,7 @@ export default function MerchantBalancePage() {
             <h2 className="text-[15px] font-semibold text-[#1f2a37]">
               Request payout
             </h2>
-            <p className="mt-1 text-[12.5px] text-[#8a97a8]">
+            <p className="mt-1 break-words text-[12.5px] text-[#8a97a8]">
               Minimum payout: {formatIDR(overview.min_payout_amount)}.{" "}
               {overview.payout_account ? (
                 <>

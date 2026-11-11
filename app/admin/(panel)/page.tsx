@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
                   key={d}
                   type="button"
                   onClick={() => setChartDays(d)}
-                  className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition ${
+                  className={`rounded-full px-3.5 py-2.5 text-[12px] font-semibold transition lg:py-1.5 ${
                     chartDays === d
                       ? "bg-[#06163a] text-white"
                       : "text-[#6b7c93] hover:bg-[#f4f7fb]"

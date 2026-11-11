@@ -139,7 +139,7 @@ export default function MerchantProfilePage() {
                 />
               </label>
               {profile?.business_name && (
-                <p className="sm:col-span-2 text-[12.5px] text-[#8a97a8]">
+                <p className="break-words text-[12.5px] text-[#8a97a8] sm:col-span-2">
                   Business:{" "}
                   <span className="font-medium text-[#3d4b5c]">
                     {profile.business_name}
@@ -150,7 +150,7 @@ export default function MerchantProfilePage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="h-10 rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048]"
+                  className="h-10 w-full rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048] sm:w-auto"
                 >
                   {saving ? "Saving..." : "Save profile"}
                 </Button>
@@ -195,7 +195,7 @@ export default function MerchantProfilePage() {
                 <Button
                   type="submit"
                   disabled={changingPw}
-                  className="h-10 rounded-full bg-[#ff5e16] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#e8530f]"
+                  className="h-10 w-full rounded-full bg-[#ff5e16] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#e8530f] sm:w-auto"
                 >
                   {changingPw ? "Updating..." : "Update password"}
                 </Button>

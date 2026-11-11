@@ -137,6 +137,28 @@ function toQuery(params: Record<string, string | number | undefined | null>) {
   return s ? `?${s}` : "";
 }
 
+// Mirrors service.MerchantStats (GET /api/v1/admin/merchants/stats).
+export type MerchantSignupPoint = {
+  date: string;
+  label: string;
+  count: number;
+};
+
+export type MerchantStats = {
+  total: number;
+  active: number;
+  inactive: number;
+  // Sum of every merchant's ledger balance in IDR (negative balances included).
+  total_balance: number;
+  negative_balance_count: number;
+  days: number;
+  signups_daily: MerchantSignupPoint[];
+};
+
+export function fetchMerchantStats() {
+  return adminFetch<MerchantStats>("/api/v1/admin/merchants/stats");
+}
+
 export function fetchDashboardSummary() {
   return adminFetch<DashboardSummary>("/api/v1/admin/dashboard/summary");
 }
@@ -267,6 +289,9 @@ export async function exportAdminPayments(params?: {
 export function fetchAdminMerchants(params?: {
   search?: string;
   status?: string;
+  // Registration (created_at) window, YYYY-MM-DD; the end date is inclusive.
+  date_from?: string;
+  date_to?: string;
   limit?: number;
   offset?: number;
 }) {
@@ -309,6 +334,8 @@ export async function createAdminMerchant(
 export async function exportAdminMerchants(params?: {
   search?: string;
   status?: string;
+  date_from?: string;
+  date_to?: string;
 }): Promise<void> {
   const res = await adminAuthFetch(
     `${API_URL}/api/v1/admin/merchants/export${toQuery(params ?? {})}`,

@@ -340,7 +340,7 @@ export default function MerchantProviderConfigSection({ merchantId }: Props) {
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
-                        className="rounded-full px-3 py-1 text-[12px] font-semibold text-[#ff5e16] hover:bg-[#fff5f0]"
+                        className="rounded-full px-3 py-1 text-[12px] font-semibold text-[#ff5e16] hover:bg-[#fff5f0] max-lg:min-h-9"
                         onClick={() => startEdit(row)}
                       >
                         Edit
@@ -352,7 +352,7 @@ export default function MerchantProviderConfigSection({ merchantId }: Props) {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="size-8 rounded-full border-[#ffd4c8] bg-white text-[#e85d3b] shadow-none hover:bg-[#fff5f2]"
+                              className="size-8 rounded-full border-[#ffd4c8] bg-white text-[#e85d3b] shadow-none hover:bg-[#fff5f2] max-lg:size-9"
                               aria-label="Delete config"
                               onClick={() => void handleDelete(row)}
                             >

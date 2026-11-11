@@ -235,7 +235,7 @@ export default function MerchantAPIKeysPage() {
                     <td className="px-5 py-3.5 text-right">
                       <button
                         type="button"
-                        className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#e85d3b] hover:bg-[#fff5f2]"
+                        className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#e85d3b] hover:bg-[#fff5f2] max-lg:inline-flex max-lg:min-h-9 max-lg:items-center"
                         onClick={() => {
                           setDeletePassword("");
                           setDeleteTarget(key);

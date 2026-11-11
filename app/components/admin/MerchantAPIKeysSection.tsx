@@ -326,7 +326,7 @@ export default function MerchantAPIKeysSection({ merchantId }: Props) {
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#6b7c93] hover:bg-[#f4f7fb]"
+                          className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#6b7c93] hover:bg-[#f4f7fb] max-lg:min-h-9"
                           onClick={() =>
                             void copyText(key.key_prefix, "Prefix")
                           }
@@ -335,7 +335,7 @@ export default function MerchantAPIKeysSection({ merchantId }: Props) {
                         </button>
                         <button
                           type="button"
-                          className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#e85d3b] hover:bg-[#fff5f2]"
+                          className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[#e85d3b] hover:bg-[#fff5f2] max-lg:min-h-9"
                           onClick={() => {
                             setDeletePassword("");
                             setDeleteTarget(key);

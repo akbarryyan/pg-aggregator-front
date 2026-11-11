@@ -79,9 +79,12 @@ export function DatePicker({
         </PopoverTrigger>
         <PopoverContent
           align="start"
+          collisionPadding={12}
           className="w-auto border border-[#e8eef4] bg-white p-0 shadow-lg"
         >
           <Calendar
+            // Bigger day cells (36px) on phones; desktop keeps the 28px default.
+            className="max-sm:[--cell-size:--spacing(9)]"
             mode="single"
             selected={selected}
             defaultMonth={selected}

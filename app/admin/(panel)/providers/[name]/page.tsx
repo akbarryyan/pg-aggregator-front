@@ -199,7 +199,7 @@ export default function AdminProviderDetailPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                   Health reason
                 </p>
-                <p className="mt-1 text-[13.5px] font-medium text-[#1f2a37]">
+                <p className="mt-1 break-words text-[13.5px] font-medium text-[#1f2a37]">
                   {provider.health?.reason || "—"}
                 </p>
               </div>
@@ -265,7 +265,7 @@ export default function AdminProviderDetailPage() {
                 type="button"
                 disabled={saving || !dirty}
                 onClick={() => void handleSaveHealth()}
-                className="h-10 rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048] disabled:opacity-50"
+                className="h-10 w-full rounded-full bg-[#06163a] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[#0b2048] disabled:opacity-50 sm:w-auto"
               >
                 {saving ? "Saving..." : "Update health"}
               </Button>

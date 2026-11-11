@@ -234,11 +234,11 @@ export default function AdminMerchantDetailPage() {
         <>
           <Card className="p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-[18px] font-semibold text-[#1f2a37]">
+              <div className="min-w-0">
+                <h2 className="break-words text-[18px] font-semibold text-[#1f2a37]">
                   {merchant.business_name}
                 </h2>
-                <p className="mt-1 text-[13px] text-[#6b7c93]">{merchant.name}</p>
+                <p className="mt-1 break-words text-[13px] text-[#6b7c93]">{merchant.name}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span
@@ -305,7 +305,7 @@ export default function AdminMerchantDetailPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                   Email
                 </p>
-                <p className="mt-1 text-[13.5px] font-medium text-[#1f2a37]">
+                <p className="mt-1 break-all text-[13.5px] font-medium text-[#1f2a37]">
                   {merchant.email}
                 </p>
               </div>
@@ -369,6 +369,7 @@ export default function AdminMerchantDetailPage() {
               <Button
                 type="button"
                 size="sm"
+                className="max-lg:h-9"
                 disabled={savingFee || feeBearerDraft === merchant.fee_bearer}
                 onClick={() => void handleSaveFeeBearer()}
               >
@@ -413,7 +414,11 @@ export default function AdminMerchantDetailPage() {
                   </p>
                 )}
               </div>
-              <Button type="button" onClick={() => setAdjustOpen(true)}>
+              <Button
+                type="button"
+                className="max-lg:h-9"
+                onClick={() => setAdjustOpen(true)}
+              >
                 Adjust balance
               </Button>
             </div>

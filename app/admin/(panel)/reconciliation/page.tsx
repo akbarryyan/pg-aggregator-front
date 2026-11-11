@@ -296,7 +296,7 @@ export default function AdminReconciliationPage() {
                           disabled={
                             checkingId === row.payment_id || batchRunning
                           }
-                          className="h-8 rounded-full border-[#e8eef4] bg-white px-3 text-[12px] font-semibold text-[#3d4b5c] shadow-none hover:bg-[#f4f7fb] disabled:opacity-40"
+                          className="h-8 rounded-full border-[#e8eef4] bg-white px-3 text-[12px] font-semibold text-[#3d4b5c] shadow-none hover:bg-[#f4f7fb] disabled:opacity-40 max-lg:h-9"
                           onClick={() => void handleCheckOne(row.payment_id)}
                         >
                           {checkingId === row.payment_id

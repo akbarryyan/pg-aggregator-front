@@ -29,6 +29,8 @@ const navItems = [
 
 type AdminSidebarProps = {
   collapsed: boolean;
+  mobileOpen: boolean;
+  onNavigate: () => void;
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -36,14 +38,18 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function AdminSidebar({ collapsed }: AdminSidebarProps) {
+export default function AdminSidebar({ collapsed, mobileOpen, onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`admin-sidebar sticky top-0 z-40 flex h-screen shrink-0 flex-col bg-[#06163a] text-white transition-[width] duration-200 ease-in-out ${
-        collapsed ? "w-18" : "w-65"
-      }`}
+      className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex h-screen max-lg:h-dvh w-65 shrink-0 flex-col bg-[#06163a] text-white transition-[translate,width,visibility] duration-200 ease-in-out lg:visible lg:sticky lg:inset-auto lg:top-0 lg:z-40 lg:translate-x-0 ${
+        mobileOpen ? "visible translate-x-0 shadow-xl" : "invisible -translate-x-full"
+      } ${collapsed ? "lg:w-18" : "lg:w-65"}`}
+      id="app-sidebar"
+      role={mobileOpen ? "dialog" : undefined}
+      aria-modal={mobileOpen ? true : undefined}
+      aria-label="Sidebar"
     >
       <div
         className={`flex h-16 shrink-0 items-center ${
@@ -68,7 +74,7 @@ export default function AdminSidebar({ collapsed }: AdminSidebarProps) {
         </span>
       </div>
 
-      <nav className="admin-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-0 pb-6 pt-1">
+      <nav aria-label="Main navigation" className="admin-sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden px-0 pb-6 pt-1">
         <ul className="flex flex-col">
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.href);
@@ -88,6 +94,7 @@ export default function AdminSidebar({ collapsed }: AdminSidebarProps) {
                 <Link
                   href={item.href}
                   className={className}
+                  onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                 >
                   {active && (

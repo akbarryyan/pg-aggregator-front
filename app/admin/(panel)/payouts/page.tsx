@@ -180,7 +180,7 @@ export default function AdminPayoutsPage() {
               key={t.label}
               type="button"
               onClick={() => setStatus(t.value)}
-              className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition ${
+              className={`rounded-full px-3.5 py-2.5 text-[12px] font-semibold transition lg:py-1.5 ${
                 status === t.value
                   ? "bg-[#06163a] text-white"
                   : "text-[#6b7c93] hover:bg-[#f4f7fb]"
@@ -246,7 +246,7 @@ export default function AdminPayoutsPage() {
                           aria-label="Copy account number"
                           title="Copy account number"
                           onClick={() => void copyText(p.account_number)}
-                          className="rounded p-1 text-[#6b7c93] hover:bg-[#f4f7fb] hover:text-[#06163a]"
+                          className="rounded p-1 text-[#6b7c93] hover:bg-[#f4f7fb] hover:text-[#06163a] max-lg:inline-flex max-lg:size-9 max-lg:items-center max-lg:justify-center"
                         >
                           <CopyIcon className="size-3.5" />
                         </button>
@@ -265,6 +265,7 @@ export default function AdminPayoutsPage() {
                           <Button
                             type="button"
                             size="sm"
+                            className="max-lg:h-9"
                             onClick={() => setAction({ kind: "pay", payout: p })}
                           >
                             Mark as paid
@@ -273,6 +274,7 @@ export default function AdminPayoutsPage() {
                             type="button"
                             size="sm"
                             variant="destructive"
+                            className="max-lg:h-9"
                             onClick={() =>
                               setAction({ kind: "reject", payout: p })
                             }

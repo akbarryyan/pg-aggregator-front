@@ -37,7 +37,7 @@ const SERIES = {
   amount: "#ff5e16",
 };
 
-function ChartTooltipBox({
+export function ChartTooltipBox({
   active,
   payload,
   label,

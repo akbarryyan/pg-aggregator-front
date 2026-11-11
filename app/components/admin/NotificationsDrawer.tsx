@@ -10,6 +10,7 @@ import {
   CircleAlertIcon,
   Clock3Icon,
   WalletIcon,
+  XIcon,
 } from "lucide-react";
 import {
   fetchAdminNotifications,
@@ -18,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -112,8 +114,17 @@ export default function NotificationsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-md border-[#e8eef4] bg-white">
-        <DrawerHeader className="border-b border-[#eef2f6] text-left">
+      <DrawerContent className="data-[vaul-drawer-direction=right]:w-[85%] data-[vaul-drawer-direction=right]:sm:max-w-md border-[#e8eef4] bg-white">
+        <DrawerClose asChild>
+          <button
+            type="button"
+            aria-label="Close notifications"
+            className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-[#6b7c93] transition hover:bg-[#f4f7fb] hover:text-[#06163a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5e16]/40"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </DrawerClose>
+        <DrawerHeader className="border-b border-[#eef2f6] pr-14 text-left">
           <DrawerTitle className="flex items-center gap-2 text-[18px] font-semibold text-[#1f2a37]">
             <BellIcon className="size-5 text-[#ff5e16]" />
             Notifications
@@ -170,7 +181,7 @@ export default function NotificationsDrawer({
                         <p className="mt-0.5 text-[11px] font-medium text-[#8a97a8]">
                           {meta.label}
                         </p>
-                        <p className="mt-1 line-clamp-2 text-[12.5px] text-[#3d4b5c]">
+                        <p className="mt-1 line-clamp-2 break-words text-[12.5px] text-[#3d4b5c]">
                           {n.body}
                         </p>
                       </div>

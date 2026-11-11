@@ -204,12 +204,12 @@ export default function PaymentLinkDetailPage() {
         <>
           <Card className="p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[12px] text-[#8a97a8]">Slug</p>
-                <h2 className="mt-1 text-[18px] font-semibold text-[#1f2a37]">
+                <h2 className="mt-1 break-words text-[18px] font-semibold text-[#1f2a37]">
                   {link.title}
                 </h2>
-                <p className="mt-1 font-mono text-[12.5px] text-[#6b7c93]">
+                <p className="mt-1 break-all font-mono text-[12.5px] text-[#6b7c93]">
                   /{link.slug}
                 </p>
               </div>

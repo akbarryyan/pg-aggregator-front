@@ -92,7 +92,7 @@ export default function PublicPaymentLinkPage() {
       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#e8eef4] bg-white shadow-[0_16px_48px_rgba(16,38,73,0.08)]">
         <div className="bg-[#06163a] px-6 py-5 text-white">
           <p className="text-[13px] font-medium text-white/70">whuzpay · Payment link</p>
-          <h1 className="mt-1 text-[20px] font-semibold tracking-tight">
+          <h1 className="mt-1 break-words text-[20px] font-semibold tracking-tight">
             {link?.title || "Payment link"}
           </h1>
         </div>
@@ -110,13 +110,13 @@ export default function PublicPaymentLinkPage() {
           ) : link ? (
             <>
               {link.description && (
-                <p className="text-[13px] text-[#6b7c93]">{link.description}</p>
+                <p className="break-words text-[13px] text-[#6b7c93]">{link.description}</p>
               )}
 
               {link.amount_type === "fixed" && link.amount ? (
                 <div>
                   <p className="text-[12px] text-[#8a97a8]">Amount</p>
-                  <p className="mt-0.5 text-[28px] font-bold tracking-tight text-[#1f2a37]">
+                  <p className="mt-0.5 break-words text-[28px] font-bold tracking-tight text-[#1f2a37]">
                     {formatIDR(link.amount, link.currency)}
                   </p>
                 </div>

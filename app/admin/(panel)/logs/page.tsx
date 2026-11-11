@@ -328,7 +328,7 @@ export default function AdminLogsPage() {
         )}
 
         {!loading && total > 0 && (
-          <div className="flex flex-col gap-3 border-t border-[#eef2f6] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-4 py-3">
             <p className="text-[12.5px] text-[#8a97a8]">
               Page {page} of {totalPages}
             </p>

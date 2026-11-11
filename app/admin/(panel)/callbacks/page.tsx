@@ -282,7 +282,7 @@ export default function AdminCallbacksPage() {
                                   retryingId === row.id ||
                                   row.status === "success"
                                 }
-                                className="size-8 rounded-full border-[#e8eef4] bg-white text-[#3d4b5c] shadow-none hover:bg-[#f4f7fb] disabled:opacity-40"
+                                className="size-8 rounded-full border-[#e8eef4] bg-white text-[#3d4b5c] shadow-none hover:bg-[#f4f7fb] disabled:opacity-40 max-lg:size-9"
                                 aria-label="Retry callback"
                                 onClick={() => void handleRetry(row.id)}
                               >
@@ -310,7 +310,7 @@ export default function AdminCallbacksPage() {
         )}
 
         {!loading && total > 0 && (
-          <div className="flex flex-col gap-3 border-t border-[#eef2f6] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-4 py-3">
             <p className="text-[12.5px] text-[#8a97a8]">
               Page {page} of {totalPages}
             </p>

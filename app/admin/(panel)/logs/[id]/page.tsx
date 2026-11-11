@@ -68,8 +68,8 @@ export default function AdminLogDetailPage() {
         <>
           <Card className="p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-[18px] font-semibold text-[#1f2a37]">
+              <div className="min-w-0">
+                <h2 className="break-words text-[18px] font-semibold text-[#1f2a37]">
                   {log.event_type}
                 </h2>
                 <p className="mt-1 text-[13px] capitalize text-[#6b7c93]">
@@ -128,7 +128,7 @@ export default function AdminLogDetailPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[#e85d3b]">
                     Processing error
                   </p>
-                  <p className="mt-1 text-[13.5px] text-[#e85d3b]">
+                  <p className="mt-1 break-words text-[13.5px] text-[#e85d3b]">
                     {log.processing_error}
                   </p>
                 </div>

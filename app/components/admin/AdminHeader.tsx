@@ -13,7 +13,7 @@ import NotificationsDrawer from "./NotificationsDrawer";
 import SignOutConfirmModal from "./SignOutConfirmModal";
 
 type AdminHeaderProps = {
-  sidebarCollapsed: boolean;
+  expanded: boolean;
   onMenuClick: () => void;
 };
 
@@ -48,7 +48,7 @@ function IconLogout(props: SVGProps<SVGSVGElement>) {
 }
 
 export default function AdminHeader({
-  sidebarCollapsed,
+  expanded,
   onMenuClick,
 }: AdminHeaderProps) {
   const router = useRouter();
@@ -123,14 +123,15 @@ export default function AdminHeader({
         <button
           type="button"
           onClick={onMenuClick}
+          aria-expanded={expanded}
+          aria-controls="app-sidebar"
           className="flex h-9 w-9 items-center justify-center rounded-md text-[#6b7c93] transition hover:bg-[#f4f7fb] hover:text-[#06163a]"
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!sidebarCollapsed}
+          aria-label="Toggle sidebar"
         >
           <IconMenu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setNotificationsOpen(true)}
@@ -182,7 +183,7 @@ export default function AdminHeader({
             <div
               role="menu"
               aria-hidden={!menuOpen}
-              className={`absolute right-0 z-50 mt-2 w-60 origin-top-right rounded-xl border border-[#e8eef4] bg-white shadow-[0_12px_40px_rgba(16,38,73,0.12)] transition-[opacity,transform,visibility] duration-200 ease-out ${
+              className={`absolute right-0 z-50 mt-2 w-60 max-w-[calc(100vw-1rem)] origin-top-right rounded-xl border border-[#e8eef4] bg-white shadow-[0_12px_40px_rgba(16,38,73,0.12)] transition-[opacity,transform,visibility] duration-200 ease-out ${
                 menuOpen
                   ? "visible translate-y-0 scale-100 opacity-100"
                   : "invisible pointer-events-none -translate-y-1 scale-95 opacity-0"

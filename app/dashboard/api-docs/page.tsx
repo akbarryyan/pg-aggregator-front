@@ -76,7 +76,7 @@ function Endpoint({ method, path }: { method: "GET" | "POST"; path: string }) {
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3.5 py-2.5">
       <MethodBadge method={method} />
-      <code className="text-[13px] text-[#1f2a37]">{path}</code>
+      <code className="min-w-0 break-all text-[13px] text-[#1f2a37]">{path}</code>
     </div>
   );
 }
@@ -200,7 +200,7 @@ export default function ApiDocsPage() {
               e.preventDefault();
               scrollToSection(item.id);
             }}
-            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#3d4b5c] transition-colors duration-150 hover:bg-[#f4f7fb]"
+            className="rounded-full px-3 py-2.5 text-[12.5px] font-medium text-[#3d4b5c] transition-colors duration-150 hover:bg-[#f4f7fb] lg:py-1.5"
           >
             {item.label}
           </a>

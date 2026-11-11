@@ -318,7 +318,7 @@ export default function AdminProfilePage() {
             type="submit"
             disabled={saving}
             aria-busy={saving}
-            className="inline-flex min-w-37 items-center justify-center gap-2 rounded-full bg-[#ff5e16] px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_4px_14px_rgba(255,94,22,0.28)] transition-all duration-200 hover:bg-[#ef5510] disabled:cursor-not-allowed disabled:opacity-85"
+            className="inline-flex w-full min-w-37 items-center justify-center gap-2 rounded-full sm:w-auto bg-[#ff5e16] px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_4px_14px_rgba(255,94,22,0.28)] transition-all duration-200 hover:bg-[#ef5510] disabled:cursor-not-allowed disabled:opacity-85"
           >
             {saving ? (
               <>
@@ -406,7 +406,7 @@ export default function AdminProfilePage() {
             type="submit"
             disabled={changingPassword}
             aria-busy={changingPassword}
-            className="inline-flex min-w-42 items-center justify-center gap-2 rounded-full bg-[#06163a] px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_4px_14px_rgba(6,22,58,0.22)] transition-all duration-200 hover:bg-[#0a1f4d] disabled:cursor-not-allowed disabled:opacity-85"
+            className="inline-flex w-full min-w-42 items-center justify-center gap-2 rounded-full sm:w-auto bg-[#06163a] px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_4px_14px_rgba(6,22,58,0.22)] transition-all duration-200 hover:bg-[#0a1f4d] disabled:cursor-not-allowed disabled:opacity-85"
           >
             {changingPassword ? (
               <>

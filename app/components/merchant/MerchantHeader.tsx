@@ -15,7 +15,7 @@ import SignOutConfirmModal from "../admin/SignOutConfirmModal";
 import MerchantNotificationsDrawer from "./MerchantNotificationsDrawer";
 
 type Props = {
-  sidebarCollapsed: boolean;
+  expanded: boolean;
   onMenuClick: () => void;
 };
 
@@ -49,7 +49,7 @@ function IconLogout(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export default function MerchantHeader({ onMenuClick }: Props) {
+export default function MerchantHeader({ expanded, onMenuClick }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { environment, setEnvironment } = useMerchantEnvironment();
@@ -130,13 +130,15 @@ export default function MerchantHeader({ onMenuClick }: Props) {
         <button
           type="button"
           onClick={onMenuClick}
+          aria-expanded={expanded}
+          aria-controls="app-sidebar"
           className="flex h-9 w-9 items-center justify-center rounded-md text-[#6b7c93] transition hover:bg-[#f4f7fb] hover:text-[#06163a]"
           aria-label="Toggle sidebar"
         >
           <IconMenu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setNotificationsOpen(true)}
@@ -159,7 +161,7 @@ export default function MerchantHeader({ onMenuClick }: Props) {
             <button
               type="button"
               onClick={() => setEnvironment("sandbox")}
-              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+              className={`min-h-9 rounded-full px-2.5 py-1.5 text-[12px] font-semibold sm:min-h-0 sm:px-3 transition ${
                 environment === "sandbox"
                   ? "bg-[#fff7e6] text-[#c27a00] shadow-sm"
                   : "text-[#8a97a8] hover:text-[#3d4b5c]"
@@ -170,7 +172,7 @@ export default function MerchantHeader({ onMenuClick }: Props) {
             <button
               type="button"
               onClick={() => setEnvironment("production")}
-              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+              className={`min-h-9 rounded-full px-2.5 py-1.5 text-[12px] font-semibold sm:min-h-0 sm:px-3 transition ${
                 environment === "production"
                   ? "bg-[#e8f8ee] text-[#2f9e5a] shadow-sm"
                   : "text-[#8a97a8] hover:text-[#3d4b5c]"
@@ -200,7 +202,7 @@ export default function MerchantHeader({ onMenuClick }: Props) {
           </button>
 
           {menuOpen && (
-            <div className="absolute top-full right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-[#e8eef4] bg-white py-1 shadow-lg">
+            <div className="absolute top-full right-0 z-50 mt-2 w-56 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[#e8eef4] bg-white py-1 shadow-lg">
               <button
                 type="button"
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[#3d4b5c] hover:bg-[#f4f7fb]"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { XIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { createAdminMerchant } from "@/lib/admin-api";
 import { Button } from "@/components/ui/button";
@@ -89,8 +90,17 @@ export default function CreateMerchantDrawer({
       }}
       direction="right"
     >
-      <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-md border-[#e8eef4] bg-white">
-        <DrawerHeader className="border-b border-[#eef2f6] text-left">
+      <DrawerContent className="data-[vaul-drawer-direction=right]:w-[85%] data-[vaul-drawer-direction=right]:sm:max-w-md border-[#e8eef4] bg-white">
+        <DrawerClose asChild>
+          <button
+            type="button"
+            aria-label="Close drawer"
+            className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-[#6b7c93] transition hover:bg-[#f4f7fb] hover:text-[#06163a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5e16]/40"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </DrawerClose>
+        <DrawerHeader className="border-b border-[#eef2f6] pr-14 text-left">
           <DrawerTitle className="text-[18px] font-semibold text-[#1f2a37]">
             Add merchant
           </DrawerTitle>
@@ -194,7 +204,7 @@ export default function CreateMerchantDrawer({
               type="button"
               variant="outline"
               disabled={submitting}
-              className="border-[#e8eef4] text-[#3d4b5c]"
+              className="border-[#e8eef4] text-[#3d4b5c] max-lg:h-9"
             >
               Cancel
             </Button>
@@ -203,7 +213,7 @@ export default function CreateMerchantDrawer({
             type="submit"
             form="create-merchant-form"
             disabled={submitting}
-            className="bg-[#ff5e16] text-white hover:bg-[#ef5510]"
+            className="bg-[#ff5e16] text-white hover:bg-[#ef5510] max-lg:h-9"
           >
             {submitting ? (
               <>

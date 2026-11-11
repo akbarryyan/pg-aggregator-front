@@ -10,11 +10,15 @@ import {
   SearchIcon,
 } from "lucide-react";
 import CreateMerchantDrawer from "@/app/components/admin/CreateMerchantDrawer";
+import DateRangeButton from "@/app/components/admin/DateRangeButton";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import MerchantStatsSection from "@/app/components/admin/MerchantStatsSection";
 import { fetchAllAdminBalances, type AdminMerchantBalance } from "@/lib/admin-payouts";
 import {
   exportAdminMerchants,
   fetchAdminMerchants,
+  fetchMerchantStats,
+  type MerchantStats,
   type AdminMerchant,
 } from "@/lib/admin-api";
 import { usePagination } from "@/lib/use-pagination";
@@ -85,20 +89,34 @@ export default function AdminMerchantsPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [balances, setBalances] = useState<Map<string, AdminMerchantBalance> | null>(null);
   const [balanceError, setBalanceError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [stats, setStats] = useState<MerchantStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [statsKey, setStatsKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const [page, setPage] = usePagination([status, search, pageSize], totalPages);
+  const [page, setPage] = usePagination([status, search, dateFrom, dateTo, pageSize], totalPages);
   const pageItems = useMemo(
     () => buildPageItems(page, totalPages),
     [page, totalPages],
   );
+
+  // Apply the typed search shortly after the last keystroke (no Search button).
+  useEffect(() => {
+    const next = searchInput.trim();
+    if (next === search) return;
+    const timer = window.setTimeout(() => setSearch(next), 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, search]);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +127,8 @@ export default function AdminMerchantsPage() {
         const data = await fetchAdminMerchants({
           status: status || undefined,
           search: search || undefined,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
           limit: pageSize,
           offset: (page - 1) * pageSize,
         });
@@ -129,7 +149,7 @@ export default function AdminMerchantsPage() {
     return () => {
       cancelled = true;
     };
-  }, [status, search, page, pageSize, refreshKey]);
+  }, [status, search, dateFrom, dateTo, page, pageSize, refreshKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +170,27 @@ export default function AdminMerchantsPage() {
     };
   }, [refreshKey]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if this
+  // fails) and refreshed with the table or via the section's Retry button.
+  useEffect(() => {
+    let cancelled = false;
+    fetchMerchantStats()
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+        setStatsError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, statsKey]);
+
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
 
@@ -163,6 +204,8 @@ export default function AdminMerchantsPage() {
       await exportAdminMerchants({
         status: status || undefined,
         search: search || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
       });
       toast.success("Merchants exported successfully.");
     } catch (err) {
@@ -181,6 +224,16 @@ export default function AdminMerchantsPage() {
         description="Businesses receiving payments through the platform."
       />
 
+      <MerchantStatsSection
+        stats={stats}
+        loading={statsLoading}
+        error={statsError}
+        onRetry={() => {
+          setStatsLoading(true);
+          setStatsKey((k) => k + 1);
+        }}
+      />
+
       <Card className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           {/* Left: status + search */}
@@ -193,8 +246,12 @@ export default function AdminMerchantsPage() {
               className="w-full sm:w-42.5"
             />
 
+            {/* Live search: the table filters as you type (debounced); Enter
+                applies immediately. The field stretches up to the right-hand
+                controls. */}
             <form
-              className="flex w-full flex-1 gap-2 sm:max-w-md"
+              role="search"
+              className="flex w-full min-w-0 flex-1"
               onSubmit={(e) => {
                 e.preventDefault();
                 setSearch(searchInput.trim());
@@ -203,18 +260,14 @@ export default function AdminMerchantsPage() {
               <div className="relative w-full">
                 <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#8a97a8]" />
                 <input
+                  type="search"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search business, owner, email..."
+                  aria-label="Search merchants"
                   className="h-9 w-full rounded-full border border-[#e8eef4] bg-[#f8fafc] pr-3 pl-9 text-[13px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
                 />
               </div>
-              <button
-                type="submit"
-                className="h-9 shrink-0 rounded-full bg-[#ff5e16] px-5 text-[12.5px] font-semibold text-white"
-              >
-                Search
-              </button>
             </form>
           </div>
 
@@ -275,6 +328,16 @@ export default function AdminMerchantsPage() {
                   Export CSV
                 </TooltipContent>
               </Tooltip>
+
+              <DateRangeButton
+                from={dateFrom}
+                to={dateTo}
+                label="Filter by registration date"
+                onChange={({ from, to }) => {
+                  setDateFrom(from);
+                  setDateTo(to);
+                }}
+              />
 
               <FilterDropdown
                 value={String(pageSize)}
@@ -392,7 +455,7 @@ export default function AdminMerchantsPage() {
         )}
 
         {!loading && total > 0 && (
-          <div className="flex flex-col gap-3 border-t border-[#eef2f6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-4 py-4">
             <p className="text-[12.5px] text-[#8a97a8]">
               Page {page} of {totalPages}
             </p>

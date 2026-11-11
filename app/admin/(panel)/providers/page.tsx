@@ -109,7 +109,7 @@ export default function AdminProvidersPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8a97a8]">
                       Reason
                     </p>
-                    <p className="mt-1 text-[13px] text-[#3d4b5c]">
+                    <p className="mt-1 break-words text-[13px] text-[#3d4b5c]">
                       {p.health.reason}
                     </p>
                   </div>
@@ -126,7 +126,7 @@ export default function AdminProvidersPage() {
 
                 <Link
                   href={`/admin/providers/${encodeURIComponent(p.name)}`}
-                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#ff5e16] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#ff5e16] hover:underline max-lg:min-h-9"
                 >
                   View detail
                   <ArrowRightIcon className="size-3.5" />

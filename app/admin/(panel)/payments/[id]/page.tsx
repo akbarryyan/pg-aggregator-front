@@ -122,19 +122,23 @@ export default function AdminPaymentDetailPage() {
         <>
           <Card className="p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[12px] text-[#8a97a8]">Reference</p>
-                <h2 className="mt-1 text-[18px] font-semibold text-[#1f2a37]">
+                <h2 className="mt-1 break-all text-[18px] font-semibold text-[#1f2a37]">
                   {payment.reference}
                 </h2>
-                <p className="mt-1 text-[13px] text-[#6b7c93]">
+                <p className="mt-1 break-words text-[13px] text-[#6b7c93]">
                   {payment.description}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <StatusBadge status={payment.status} />
                 {refunds?.refundable && (
-                  <Button type="button" onClick={() => setRefundOpen(true)}>
+                  <Button
+                    type="button"
+                    className="max-lg:h-9"
+                    onClick={() => setRefundOpen(true)}
+                  >
                     Refund
                   </Button>
                 )}
@@ -195,6 +199,7 @@ export default function AdminPaymentDetailPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="max-lg:h-9"
                 onClick={() => setReloadKey((k) => k + 1)}
               >
                 Retry
@@ -342,7 +347,7 @@ export default function AdminPaymentDetailPage() {
                       {cb.http_status != null ? ` · HTTP ${cb.http_status}` : ""}
                     </p>
                     {cb.error_message && (
-                      <p className="mt-1 text-[12px] text-[#e85d3b]">
+                      <p className="mt-1 break-words text-[12px] text-[#e85d3b]">
                         {cb.error_message}
                       </p>
                     )}
@@ -383,13 +388,13 @@ export default function AdminPaymentDetailPage() {
                         {ev.is_processed ? " · processed" : " · not processed"}
                       </p>
                       {ev.processing_error && (
-                        <p className="mt-2 text-[12px] text-[#e85d3b]">
+                        <p className="mt-2 break-words text-[12px] text-[#e85d3b]">
                           {ev.processing_error}
                         </p>
                       )}
                       <Link
                         href={`/admin/logs/${ev.id}`}
-                        className="mt-2 inline-block text-[12.5px] font-semibold text-[#ff5e16] hover:underline"
+                        className="mt-2 inline-block text-[12.5px] font-semibold text-[#ff5e16] hover:underline max-lg:py-2.5"
                       >
                         View log detail
                       </Link>

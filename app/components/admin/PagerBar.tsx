@@ -15,7 +15,7 @@ export default function PagerBar({
 }) {
   if (total === 0) return null;
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-[#eef2f6] px-5 py-3 text-[12.5px] text-[#6b7c93]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eef2f6] px-5 py-3 text-[12.5px] text-[#6b7c93]">
       <span>
         Page {page} of {totalPages} · {total.toLocaleString("id-ID")} total
       </span>
@@ -24,6 +24,7 @@ export default function PagerBar({
           type="button"
           variant="outline"
           size="sm"
+          className="max-lg:h-9"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
         >
@@ -33,6 +34,7 @@ export default function PagerBar({
           type="button"
           variant="outline"
           size="sm"
+          className="max-lg:h-9"
           disabled={page >= totalPages}
           onClick={() => onPage(page + 1)}
         >

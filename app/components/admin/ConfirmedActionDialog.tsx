@@ -214,12 +214,17 @@ export default function ConfirmedActionDialog({
               <Button
                 type="button"
                 variant="outline"
+                className="max-lg:h-9"
                 disabled={pending}
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
-              <Button type="button" onClick={handleReview}>
+              <Button
+                type="button"
+                className="max-lg:h-9"
+                onClick={handleReview}
+              >
                 Review
               </Button>
             </>
@@ -228,6 +233,7 @@ export default function ConfirmedActionDialog({
               <Button
                 type="button"
                 variant="outline"
+                className="max-lg:h-9"
                 disabled={pending}
                 onClick={() => {
                   setError("");
@@ -239,6 +245,7 @@ export default function ConfirmedActionDialog({
               <Button
                 type="button"
                 variant={destructive ? "destructive" : "default"}
+                className="max-lg:h-9"
                 disabled={pending}
                 onClick={() => void handleConfirm()}
               >
