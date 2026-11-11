@@ -6,21 +6,16 @@ import {
   fetchPublicPaymentByReference,
   type PublicPayment,
 } from "@/lib/merchant-api";
-import { formatDateTime, formatIDR } from "@/app/components/admin/ui";
+import {
+  CheckoutHeader,
+  MobileDetails,
+  MobileTotal,
+  OrderDetails,
+  QrisPanel,
+  ResultPanel,
+} from "./CheckoutPanels";
 
-function statusStyle(status: string) {
-  switch (status) {
-    case "paid":
-      return "bg-[#e8f8ee] text-[#2f9e5a]";
-    case "pending":
-      return "bg-[#fff7e6] text-[#c27a00]";
-    case "expired":
-    case "failed":
-      return "bg-[#fff1ed] text-[#e85d3b]";
-    default:
-      return "bg-[#eef2f6] text-[#6b7c93]";
-  }
-}
+const POLL_MS = 5000;
 
 export default function PublicPayPage() {
   const params = useParams<{ reference: string }>();
@@ -30,16 +25,12 @@ export default function PublicPayPage() {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(t);
-  }, []);
-
+  // Poll while the payment is pending; stop once it reaches a final status.
+  const pending = payment === null || payment.status === "pending";
   useEffect(() => {
     if (!reference) return;
     let cancelled = false;
     async function load() {
-      setLoading(true);
       try {
         const data = await fetchPublicPaymentByReference(reference);
         if (!cancelled) {
@@ -48,7 +39,7 @@ export default function PublicPayPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Payment not found.");
+          setError(err instanceof Error ? err.message : "Pembayaran tidak ditemukan.");
           setPayment(null);
         }
       } finally {
@@ -56,137 +47,93 @@ export default function PublicPayPage() {
       }
     }
     void load();
-    // Poll while pending
+    if (!pending) {
+      return () => {
+        cancelled = true;
+      };
+    }
     const interval = window.setInterval(() => {
       if (!cancelled) void load();
-    }, 8000);
+    }, POLL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [reference]);
+  }, [reference, pending]);
 
-  const remaining = (() => {
-    if (!payment?.expires_at) return null;
-    const ms = new Date(payment.expires_at).getTime() - now;
-    if (ms <= 0) return "Expired";
+  // One-second clock for the countdown, only while there is something to count.
+  const counting = payment?.status === "pending";
+  useEffect(() => {
+    if (!counting) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [counting]);
+
+  const countdown = (() => {
+    if (!payment || payment.status !== "pending") return null;
+    const end = new Date(payment.expires_at).getTime();
+    const start = new Date(payment.created_at).getTime();
+    if (Number.isNaN(end)) return null;
+    const ms = end - now;
+    const total = Number.isNaN(start) ? 0 : end - start;
+    const progress = total > 0 ? Math.max(0, Math.min(1, ms / total)) : 0;
+    if (ms <= 0) return { label: "Habis", progress: 0 };
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms % 60000) / 1000);
-    return `${m}:${String(s).padStart(2, "0")}`;
+    return { label: `${m}:${String(s).padStart(2, "0")}`, progress };
   })();
 
-  const hasFee = (payment?.fee_amount ?? 0) > 0;
-
-  const isImageQr =
-    payment?.qris_data?.startsWith("data:image") ||
-    payment?.qris_data?.startsWith("http");
+  const isFinal = payment !== null && payment.status !== "pending";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#eff4f8] px-4 py-10">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#e8eef4] bg-white shadow-[0_16px_48px_rgba(16,38,73,0.08)]">
-        <div className="bg-[#06163a] px-6 py-5 text-white">
-          <p className="text-[13px] font-medium text-white/70">whuzpay · Checkout</p>
-          <h1 className="mt-1 break-words text-[20px] font-semibold tracking-tight">
-            {payment?.description || "Payment"}
-          </h1>
-        </div>
+    <main className="min-h-screen bg-[#eff4f8] px-4 py-6 sm:py-10">
+      <div className="mx-auto w-full max-w-4xl">
+        <CheckoutHeader sandbox={payment?.environment === "sandbox"} />
 
-        <div className="space-y-5 p-6">
+        <div className="overflow-hidden rounded-2xl border border-[#e8eef4] bg-white shadow-[0_16px_48px_rgba(16,38,73,0.08)]">
           {loading && !payment ? (
-            <p className="text-center text-[13px] text-[#8a97a8]">Loading...</p>
-          ) : error ? (
-            <p className="text-center text-[13px] text-[#e85d3b]">{error}</p>
-          ) : payment ? (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[12px] text-[#8a97a8]">
-                    {hasFee ? "Total to pay" : "Amount"}
-                  </p>
-                  <p className="mt-0.5 break-words text-[28px] font-bold tracking-tight text-[#1f2a37]">
-                    {formatIDR(
-                      hasFee ? payment.total_amount : payment.amount,
-                      payment.currency,
-                    )}
-                  </p>
-                  <p className="mt-1 break-all text-[12px] text-[#8a97a8]">
-                    Ref · {payment.reference}
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${statusStyle(
-                    payment.status,
-                  )}`}
-                >
-                  {payment.status}
-                </span>
-              </div>
-
-              {hasFee && (
-                <dl className="space-y-1.5 rounded-xl border border-[#eef2f6] bg-[#fafbfc] px-4 py-3 text-[13px] text-[#3d4b5c]">
-                  <div className="flex justify-between">
-                    <dt>Amount</dt>
-                    <dd>{formatIDR(payment.amount, payment.currency)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Service fee</dt>
-                    <dd>{formatIDR(payment.fee_amount, payment.currency)}</dd>
-                  </div>
-                  <div className="flex justify-between border-t border-[#e8eef4] pt-1.5 font-semibold text-[#1f2a37]">
-                    <dt>Total to pay</dt>
-                    <dd>{formatIDR(payment.total_amount, payment.currency)}</dd>
-                  </div>
-                </dl>
-              )}
-
-              {payment.status === "pending" && payment.qris_data && (
-                <div className="rounded-xl border border-[#eef2f6] bg-[#fafbfc] p-4 text-center">
-                  {isImageQr ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={payment.qris_data}
-                      alt="QRIS"
-                      className="mx-auto max-h-56 max-w-full rounded-lg"
-                    />
-                  ) : (
-                    <pre className="max-h-40 overflow-auto break-all text-left text-[11px] text-[#3d4b5c]">
-                      {payment.qris_data}
-                    </pre>
-                  )}
-                  {remaining && (
-                    <p className="mt-3 text-[12.5px] text-[#6b7c93]">
-                      Expires in{" "}
-                      <span className="font-semibold text-[#1f2a37]">
-                        {remaining}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {payment.status === "paid" && (
-                <div className="rounded-xl border border-[#c8efd4] bg-[#f0faf3] px-4 py-3 text-center text-[13px] font-medium text-[#2f9e5a]">
-                  Payment received
-                  {payment.paid_at
-                    ? ` · ${formatDateTime(payment.paid_at)}`
-                    : ""}
-                </div>
-              )}
-
-              {(payment.status === "expired" || payment.status === "failed") && (
-                <div className="rounded-xl border border-[#ffd4c8] bg-[#fff5f2] px-4 py-3 text-center text-[13px] font-medium text-[#e85d3b]">
-                  This payment is {payment.status}. Contact the merchant if you
-                  need a new link.
-                </div>
-              )}
-
-              <p className="text-center text-[11px] text-[#8a97a8]">
-                Environment: {payment.environment || "production"} · Do not share
-                this page with payment secrets.
+            <p className="px-5 py-16 text-center text-[13px] text-[#8a97a8]" role="status">
+              Memuat pembayaran...
+            </p>
+          ) : error || !payment ? (
+            <div className="px-5 py-16 text-center">
+              <h1 className="text-[18px] font-semibold text-[#1f2a37]">
+                Pembayaran tidak ditemukan
+              </h1>
+              <p className="mt-2 text-[13px] text-[#6b7c93]">
+                {error ?? "Periksa kembali tautan pembayaran Anda."}
               </p>
+            </div>
+          ) : (
+            <>
+              <MobileTotal payment={payment} />
+              <div className="md:grid md:grid-cols-5">
+                <aside className="hidden border-r border-[#e8eef4] bg-[#fafbfc] p-6 md:col-span-2 md:block">
+                  <h2 className="mb-4 text-[15px] font-semibold text-[#1f2a37]">
+                    Ringkasan pesanan
+                  </h2>
+                  <OrderDetails payment={payment} />
+                </aside>
+                <section className="p-5 sm:p-6 md:col-span-3">
+                  {isFinal ? (
+                    <ResultPanel payment={payment} />
+                  ) : (
+                    <QrisPanel
+                      payment={payment}
+                      remainingLabel={countdown?.label ?? null}
+                      progress={countdown?.progress ?? 0}
+                    />
+                  )}
+                </section>
+              </div>
+              <MobileDetails payment={payment} />
             </>
-          ) : null}
+          )}
         </div>
+
+        <p className="mt-4 px-1 text-center text-[11.5px] text-[#8a97a8]">
+          Didukung oleh whuzpay · Jangan membagikan halaman ini kepada siapa pun.
+        </p>
       </div>
     </main>
   );

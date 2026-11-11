@@ -142,6 +142,8 @@ export function fetchMerchantNotifications(environment?: string, limit = 30) {
 export type PublicPayment = {
   id: string;
   reference: string;
+  // Business name of the merchant being paid ("" when unknown); display only.
+  merchant_name?: string;
   amount: number;
   fee_amount: number;
   total_amount: number;
