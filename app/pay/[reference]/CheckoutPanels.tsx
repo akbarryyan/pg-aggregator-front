@@ -14,7 +14,8 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { formatIDR } from "@/app/components/admin/ui";
-import type { PublicPayment } from "@/lib/merchant-api";
+import SandboxSimulator, { SIMULATOR_LABELS_ID } from "@/app/components/SandboxSimulator";
+import type { PublicPayment, SimulationOutcome } from "@/lib/merchant-api";
 
 // ---------------------------------------------------------------- helpers
 
@@ -217,12 +218,15 @@ export function QrisPanel({
   payment,
   checking,
   onCheck,
+  simulator,
 }: {
   payment: PublicPayment;
   /** True while a manual status check is in flight. */
   checking: boolean;
   /** Re-checks the payment status right away. */
   onCheck: () => void;
+  /** Sandbox-only simulator; omit for production payments. */
+  simulator?: { busy: SimulationOutcome | null; onSimulate: (o: SimulationOutcome) => void };
 }) {
   const [howOpen, setHowOpen] = useState(false);
   const isImageQr =
@@ -336,6 +340,12 @@ export function QrisPanel({
       >
         {checking ? "Memeriksa pembayaran..." : "Saya sudah bayar"}
       </button>
+
+      {simulator ? (
+        <div className="mt-3">
+          <SandboxSimulator labels={SIMULATOR_LABELS_ID} busy={simulator.busy} onSimulate={simulator.onSimulate} />
+        </div>
+      ) : null}
     </div>
   );
 }

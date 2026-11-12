@@ -291,6 +291,70 @@ export async function createMerchantPayment(payload: {
   return body as MerchantPayment;
 }
 
+export type SimulationOutcome = "paid" | "failed" | "expired";
+
+const SIMULATION_ERRORS: Record<number, string> = {
+  403: "Simulasi hanya untuk pembayaran sandbox.",
+  404: "Pembayaran tidak ditemukan.",
+  409: "Pembayaran sudah tidak menunggu pembayaran.",
+  429: "Terlalu banyak percobaan. Coba lagi sebentar.",
+};
+
+export class SimulationError extends Error {
+  status: number;
+  constructor(status: number) {
+    super(SIMULATION_ERRORS[status] ?? "Simulasi gagal.");
+    this.name = "SimulationError";
+    this.status = status;
+  }
+}
+
+// Public sandbox simulator used by the checkout page. Returns the same
+// public payment view as fetchPublicPaymentByReference.
+export async function simulatePublicPayment(
+  reference: string,
+  outcome: SimulationOutcome,
+): Promise<PublicPayment> {
+  const res = await fetch(
+    `${API_URL}/api/v1/public/payments/by-reference/${encodeURIComponent(reference)}/simulate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ outcome }),
+    },
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new SimulationError(res.status);
+  }
+  return body as PublicPayment;
+}
+
+// Dashboard sandbox simulator (Test Payment page).
+export async function simulateMerchantPayment(
+  id: string,
+  outcome: SimulationOutcome,
+): Promise<MerchantPayment> {
+  const res = await merchantAuthFetch(
+    `${API_URL}/api/v1/merchant/payments/${encodeURIComponent(id)}/simulate`,
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ outcome }),
+    },
+  );
+  const body = (await res.json().catch(() => null)) as
+    | MerchantPayment
+    | ApiErrorBody
+    | null;
+  if (!res.ok) {
+    throw new Error(
+      (body as ApiErrorBody | null)?.message ?? "Simulation failed.",
+    );
+  }
+  return body as MerchantPayment;
+}
+
 export type MerchantAPIKey = {
   id: string;
   merchant_id: string;

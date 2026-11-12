@@ -21,12 +21,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import SandboxSimulator, { SIMULATOR_LABELS_EN } from "@/app/components/SandboxSimulator";
 import { Button } from "@/components/ui/button";
 import {
   createMerchantPayment,
   fetchMerchantPayment,
   fetchMerchantPayments,
+  simulateMerchantPayment,
   type MerchantPayment,
+  type SimulationOutcome,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
 
@@ -78,6 +81,7 @@ export default function TestPaymentPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [payment, setPayment] = useState<MerchantPayment | null>(null);
+  const [simulating, setSimulating] = useState<SimulationOutcome | null>(null);
   const [now, setNow] = useState(0); // ms; 0 = not started (set from handlers/timer only)
 
   const [history, setHistory] = useState<MerchantPayment[]>([]);
@@ -178,6 +182,22 @@ export default function TestPaymentPage() {
     } finally {
       creatingRef.current = false;
       setCreating(false);
+    }
+  }
+
+  async function simulate(outcome: SimulationOutcome) {
+    if (!visible || simulating) return;
+    setSimulating(outcome);
+    try {
+      const p = await simulateMerchantPayment(visible.id, outcome);
+      setPayment((cur) =>
+        cur && cur.id === p.id ? { ...cur, ...p, qris_data: p.qris_data ?? cur.qris_data } : cur,
+      );
+      loadHistory();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Simulation failed.");
+    } finally {
+      setSimulating(null);
     }
   }
 
@@ -368,6 +388,14 @@ export default function TestPaymentPage() {
                     </p>
                   )}
                 </div>
+              )}
+
+              {!isProduction && visible.status === "pending" && (
+                <SandboxSimulator
+                  labels={SIMULATOR_LABELS_EN}
+                  busy={simulating}
+                  onSimulate={(o) => void simulate(o)}
+                />
               )}
 
               {visible.status === "paid" && (
