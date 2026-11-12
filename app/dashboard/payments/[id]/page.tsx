@@ -81,6 +81,26 @@ export default function MerchantPaymentDetailPage() {
     payment?.qris_data?.startsWith("data:image") ||
     payment?.qris_data?.startsWith("http");
 
+  // What the merchant gets. merchant_net_amount comes from the detail endpoint
+  // (stored net once paid, expected net before); fall back to the nominal
+  // amount against an older backend that does not send it.
+  const net = payment ? (payment.merchant_net_amount ?? payment.amount) : 0;
+  // Fee taken from the merchant's proceeds (only when the merchant bears it).
+  const merchantFee =
+    payment && payment.fee_amount === 0 ? Math.max(payment.amount - net, 0) : 0;
+  const received: { label: string; amount: number | null } = (() => {
+    switch (payment?.status) {
+      case "paid":
+        return { label: "You receive", amount: net };
+      case "pending":
+        return { label: "You will receive", amount: net };
+      case "refunded":
+        return { label: "You received (refunded)", amount: net };
+      default:
+        return { label: "You receive", amount: null };
+    }
+  })();
+
   return (
     <div className="w-full space-y-5">
       <PageHeader
@@ -122,20 +142,34 @@ export default function MerchantPaymentDetailPage() {
                 label="Amount"
                 value={formatIDR(payment.amount, payment.currency)}
               />
-              {payment.fee_amount > 0 && (
-                <>
-                  <Field
-                    label="Fee (paid by customer)"
-                    value={formatIDR(payment.fee_amount, payment.currency)}
-                  />
-                  <Field
-                    label="Total paid by customer"
-                    value={formatIDR(payment.total_amount, payment.currency)}
-                  />
-                </>
-              )}
+              {payment.fee_amount > 0 ? (
+                <Field
+                  label="Fee (paid by customer)"
+                  value={formatIDR(payment.fee_amount, payment.currency)}
+                />
+              ) : merchantFee > 0 && received.amount !== null ? (
+                <Field
+                  label="Fee (deducted from you)"
+                  value={formatIDR(merchantFee, payment.currency)}
+                />
+              ) : null}
+              <Field
+                label="Total paid by customer"
+                value={formatIDR(payment.total_amount, payment.currency)}
+              />
+              <Field
+                label={received.label}
+                value={
+                  received.amount === null ? (
+                    "—"
+                  ) : (
+                    <span className="font-semibold text-[#2f9e5a]">
+                      {formatIDR(received.amount, payment.currency)}
+                    </span>
+                  )
+                }
+              />
               <Field label="Method" value={payment.payment_method} />
-              <Field label="Provider" value={payment.provider_name} />
               <Field
                 label="Environment"
                 value={
@@ -143,10 +177,6 @@ export default function MerchantPaymentDetailPage() {
                     {payment.environment || "production"}
                   </span>
                 }
-              />
-              <Field
-                label="Provider reference"
-                value={payment.provider_reference || "—"}
               />
               <Field label="Customer" value={payment.customer_name || "—"} />
               <Field label="Email" value={payment.customer_email || "—"} />

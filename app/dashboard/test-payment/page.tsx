@@ -30,7 +30,7 @@ import {
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
 
-const TEST_CUSTOMER = "Dashboard test"; // history marker (customer_name is searchable)
+const TEST_CUSTOMER = "TEST PAYMENT"; // history marker (customer_name is searchable)
 const DEFAULT_AMOUNT = "2000";
 const DEFAULT_DESCRIPTION = "Test payment";
 const MAX_AMOUNT = 1_000_000_000_000; // server limit (fee.MaxNominal)

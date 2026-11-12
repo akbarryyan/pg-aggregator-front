@@ -62,6 +62,9 @@ export type MerchantPayment = {
   fee_amount: number;
   // What the customer actually pays: amount + fee_amount.
   total_amount: number;
+  // What the merchant receives (payment detail only): the stored net once
+  // paid, the expected net before that.
+  merchant_net_amount?: number;
   currency: string;
   payment_method: string;
   provider_name: string;

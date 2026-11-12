@@ -429,7 +429,6 @@ export default function MerchantPaymentsPage() {
                   <th className="px-5 py-3">Reference</th>
                   <th className="px-5 py-3">Amount</th>
                   <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Provider</th>
                   <th className="px-5 py-3">Created</th>
                 </tr>
               </thead>
@@ -461,7 +460,6 @@ export default function MerchantPaymentsPage() {
                     <td className="px-5 py-3.5">
                       <StatusBadge status={p.status} />
                     </td>
-                    <td className="px-5 py-3.5 capitalize">{p.provider_name}</td>
                     <td className="px-5 py-3.5 text-[#6b7c93]">
                       {formatDateTime(p.created_at)}
                     </td>
