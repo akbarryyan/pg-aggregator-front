@@ -5,10 +5,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   fetchPublicPaymentByReference,
-  SimulationError,
-  simulatePublicPayment,
   type PublicPayment,
-  type SimulationOutcome,
 } from "@/lib/merchant-api";
 import {
   CheckoutFooter,
@@ -27,7 +24,6 @@ export default function PublicPayPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [simulating, setSimulating] = useState<SimulationOutcome | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   // Poll while the payment is pending; stop once it reaches a final status.
@@ -94,27 +90,6 @@ export default function PublicPayPage() {
     }
   }
 
-  async function simulate(outcome: SimulationOutcome) {
-    if (!reference || simulating) return;
-    setSimulating(outcome);
-    try {
-      const data = await simulatePublicPayment(reference, outcome);
-      setPayment(data);
-      setError(null);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Simulasi gagal.");
-      if (err instanceof SimulationError && err.status === 409) {
-        try {
-          setPayment(await fetchPublicPaymentByReference(reference));
-        } catch {
-          // the regular poll will catch up
-        }
-      }
-    } finally {
-      setSimulating(null);
-    }
-  }
-
   const remainingLabel = (() => {
     if (!payment || payment.status !== "pending") return null;
     const end = new Date(payment.expires_at).getTime();
@@ -166,7 +141,6 @@ export default function PublicPayPage() {
                       payment={payment}
                       checking={checking}
                       onCheck={() => void checkNow()}
-                      simulator={sandbox ? { busy: simulating, onSimulate: (o) => void simulate(o) } : undefined}
                     />
                   )}
                 </section>

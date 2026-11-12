@@ -74,6 +74,7 @@ export type MerchantPayment = {
   customer_name?: string | null;
   customer_email?: string | null;
   environment?: string;
+  qr_image_url?: string;
   expires_at: string;
   paid_at?: string | null;
   created_at: string;
@@ -183,6 +184,7 @@ export type PublicPayment = {
   payment_method: string;
   environment?: string;
   qris_data?: string | null;
+  qr_image_url?: string;
   expires_at: string;
   paid_at?: string | null;
   created_at: string;
@@ -294,16 +296,16 @@ export async function createMerchantPayment(payload: {
 export type SimulationOutcome = "paid" | "failed" | "expired";
 
 const SIMULATION_ERRORS: Record<number, string> = {
-  403: "Simulasi hanya untuk pembayaran sandbox.",
-  404: "Pembayaran tidak ditemukan.",
-  409: "Pembayaran sudah tidak menunggu pembayaran.",
-  429: "Terlalu banyak percobaan. Coba lagi sebentar.",
+  403: "Only sandbox payments can be simulated.",
+  404: "Payment not found.",
+  409: "This payment is no longer pending.",
+  429: "Too many attempts. Try again shortly.",
 };
 
 export class SimulationError extends Error {
   status: number;
   constructor(status: number) {
-    super(SIMULATION_ERRORS[status] ?? "Simulasi gagal.");
+    super(SIMULATION_ERRORS[status] ?? "Simulation failed.");
     this.name = "SimulationError";
     this.status = status;
   }
@@ -328,31 +330,6 @@ export async function simulatePublicPayment(
     throw new SimulationError(res.status);
   }
   return body as PublicPayment;
-}
-
-// Dashboard sandbox simulator (Test Payment page).
-export async function simulateMerchantPayment(
-  id: string,
-  outcome: SimulationOutcome,
-): Promise<MerchantPayment> {
-  const res = await merchantAuthFetch(
-    `${API_URL}/api/v1/merchant/payments/${encodeURIComponent(id)}/simulate`,
-    {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ outcome }),
-    },
-  );
-  const body = (await res.json().catch(() => null)) as
-    | MerchantPayment
-    | ApiErrorBody
-    | null;
-  if (!res.ok) {
-    throw new Error(
-      (body as ApiErrorBody | null)?.message ?? "Simulation failed.",
-    );
-  }
-  return body as MerchantPayment;
 }
 
 export type MerchantAPIKey = {

@@ -21,15 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import SandboxSimulator, { SIMULATOR_LABELS_EN } from "@/app/components/SandboxSimulator";
 import { Button } from "@/components/ui/button";
 import {
   createMerchantPayment,
   fetchMerchantPayment,
   fetchMerchantPayments,
-  simulateMerchantPayment,
   type MerchantPayment,
-  type SimulationOutcome,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
 
@@ -81,7 +78,6 @@ export default function TestPaymentPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [payment, setPayment] = useState<MerchantPayment | null>(null);
-  const [simulating, setSimulating] = useState<SimulationOutcome | null>(null);
   const [now, setNow] = useState(0); // ms; 0 = not started (set from handlers/timer only)
 
   const [history, setHistory] = useState<MerchantPayment[]>([]);
@@ -185,22 +181,6 @@ export default function TestPaymentPage() {
     }
   }
 
-  async function simulate(outcome: SimulationOutcome) {
-    if (!visible || simulating) return;
-    setSimulating(outcome);
-    try {
-      const p = await simulateMerchantPayment(visible.id, outcome);
-      setPayment((cur) =>
-        cur && cur.id === p.id ? { ...cur, ...p, qris_data: p.qris_data ?? cur.qris_data } : cur,
-      );
-      loadHistory();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Simulation failed.");
-    } finally {
-      setSimulating(null);
-    }
-  }
-
   function onCreateClick() {
     if (amount === null) return;
     if (isProduction) setConfirmOpen(true);
@@ -226,6 +206,15 @@ export default function TestPaymentPage() {
     try {
       await navigator.clipboard.writeText(ref);
       toast.success("Reference copied.");
+    } catch {
+      toast.error("Could not copy.");
+    }
+  }
+
+  async function copyQrUrl(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("QR URL copied.");
     } catch {
       toast.error("Could not copy.");
     }
@@ -390,12 +379,33 @@ export default function TestPaymentPage() {
                 </div>
               )}
 
-              {!isProduction && visible.status === "pending" && (
-                <SandboxSimulator
-                  labels={SIMULATOR_LABELS_EN}
-                  busy={simulating}
-                  onSimulate={(o) => void simulate(o)}
-                />
+              {!isProduction && visible.status === "pending" && visible.qr_image_url && (
+                <div className="space-y-2 rounded-xl border border-[#f5d48a] bg-[#fff7e6] p-3">
+                  <p className="text-[12.5px] font-medium text-[#c27a00]">
+                    Sandbox: scan this QR image in the Simulator to pay.
+                  </p>
+                  <div className="flex min-w-0 items-center gap-1">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-[#3d4b5c] select-all">
+                      {visible.qr_image_url}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void copyQrUrl(visible.qr_image_url as string)}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold text-[#c27a00] hover:bg-[#fffaf0]"
+                    >
+                      <CopyIcon className="size-4" />
+                      Copy
+                    </button>
+                  </div>
+                  <Link
+                    href={`/simulator?qr=${encodeURIComponent(visible.qr_image_url)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block py-1 text-[13px] font-medium text-[#ff5e16] hover:underline"
+                  >
+                    Open Simulator
+                  </Link>
+                </div>
               )}
 
               {visible.status === "paid" && (

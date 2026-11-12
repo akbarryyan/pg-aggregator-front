@@ -14,8 +14,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { formatIDR } from "@/app/components/admin/ui";
-import SandboxSimulator, { SIMULATOR_LABELS_ID } from "@/app/components/SandboxSimulator";
-import type { PublicPayment, SimulationOutcome } from "@/lib/merchant-api";
+import type { PublicPayment } from "@/lib/merchant-api";
 
 // ---------------------------------------------------------------- helpers
 
@@ -218,15 +217,12 @@ export function QrisPanel({
   payment,
   checking,
   onCheck,
-  simulator,
 }: {
   payment: PublicPayment;
   /** True while a manual status check is in flight. */
   checking: boolean;
   /** Re-checks the payment status right away. */
   onCheck: () => void;
-  /** Sandbox-only simulator; omit for production payments. */
-  simulator?: { busy: SimulationOutcome | null; onSimulate: (o: SimulationOutcome) => void };
 }) {
   const [howOpen, setHowOpen] = useState(false);
   const isImageQr =
@@ -341,9 +337,29 @@ export function QrisPanel({
         {checking ? "Memeriksa pembayaran..." : "Saya sudah bayar"}
       </button>
 
-      {simulator ? (
-        <div className="mt-3">
-          <SandboxSimulator labels={SIMULATOR_LABELS_ID} busy={simulator.busy} onSimulate={simulator.onSimulate} />
+      {payment.environment === "sandbox" && payment.qr_image_url ? (
+        <div className="mt-3 rounded-lg border border-[#f5d48a] bg-[#fff7e6] p-3">
+          <p className="text-[12.5px] font-medium text-[#c27a00]">
+            Mode sandbox · uji pembayaran lewat Simulator
+          </p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void copyText(payment.qr_image_url as string, "URL QR disalin.")}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#f5d48a] bg-white px-3 text-[13px] font-semibold text-[#c27a00] transition hover:bg-[#fffaf0]"
+            >
+              <CopyIcon className="size-4" aria-hidden="true" />
+              Salin URL QR
+            </button>
+            <a
+              href={`/simulator?qr=${encodeURIComponent(payment.qr_image_url)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-[#c27a00] px-3 text-[13px] font-semibold text-white transition hover:bg-[#a86800]"
+            >
+              Buka Simulator
+            </a>
+          </div>
         </div>
       ) : null}
     </div>
