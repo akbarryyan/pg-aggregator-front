@@ -228,3 +228,31 @@ export function refundPayment(
     "Failed to record refund.",
   );
 }
+
+// Mirrors service.PayoutStats (GET /api/v1/admin/payouts/stats). Amounts are
+// IDR; arrays are never null.
+export type PayoutDailyPoint = {
+  date: string;
+  label: string;
+  count: number;
+  amount: number;
+};
+
+export type PayoutStats = {
+  days: number;
+  requested_count: number;
+  requested_amount: number;
+  paid_count: number;
+  paid_amount: number;
+  rejected_count: number;
+  rejected_amount: number;
+  daily: PayoutDailyPoint[];
+  breakdown: { status: string; count: number }[];
+};
+
+export function fetchPayoutStats() {
+  return get<PayoutStats>(
+    "/api/v1/admin/payouts/stats",
+    "Failed to load payout summary.",
+  );
+}

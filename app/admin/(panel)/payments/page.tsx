@@ -12,10 +12,17 @@ import {
 } from "lucide-react";
 import CreatePaymentDrawer from "@/app/components/admin/CreatePaymentDrawer";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import StatsOverview, {
+  statusColor,
+} from "@/app/components/admin/StatsOverview";
 import {
   exportAdminPayments,
   fetchAdminPayments,
+  fetchDashboardCharts,
+  fetchDashboardSummary,
   type AdminPayment,
+  type DashboardCharts,
+  type DashboardSummary,
 } from "@/lib/admin-api";
 import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
@@ -104,6 +111,11 @@ export default function AdminPaymentsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [charts, setCharts] = useState<DashboardCharts | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [statsKey, setStatsKey] = useState(0);
 
   // Forward a valid ?status= from the URL into local filter state whenever
   // it changes — adjusted during render (not an effect) so this doesn't
@@ -160,6 +172,34 @@ export default function AdminPaymentsPage() {
     };
   }, [status, search, page, pageSize, refreshKey]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if
+  // this fails) and refreshed with the table or via the section's Retry button.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchDashboardSummary(), fetchDashboardCharts(14)])
+      .then(([sum, ch]) => {
+        if (cancelled) return;
+        setSummary(sum);
+        setCharts(ch);
+        setStatsError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, statsKey]);
+
+  const hasStats = summary !== null && charts !== null;
+  const successRate =
+    summary && summary.total_payments > 0
+      ? Math.floor((summary.paid_payments / summary.total_payments) * 100)
+      : 0;
+
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
 
@@ -189,6 +229,59 @@ export default function AdminPaymentsPage() {
       <PageHeader
         title="Payments"
         description="All platform transactions across merchants and providers."
+      />
+
+      <StatsOverview
+        loading={statsLoading}
+        error={statsError && !hasStats}
+        onRetry={() => {
+          setStatsLoading(true);
+          setStatsError(false);
+          setStatsKey((k) => k + 1);
+        }}
+        cards={
+          !summary
+            ? []
+            : [
+                {
+                  label: "Total payments",
+                  value: summary.total_payments.toLocaleString("id-ID"),
+                  note: "All platform payments",
+                },
+                {
+                  label: "Paid amount",
+                  value: formatIDR(summary.paid_amount),
+                  note: "From successful payments",
+                },
+                {
+                  label: "Success rate",
+                  value: `${successRate}%`,
+                  tone: "text-[#2f9e5a]",
+                  note: `${summary.paid_payments.toLocaleString("id-ID")} paid`,
+                },
+              ]
+        }
+        chart={{
+          title: "Paid amount per day",
+          subtitle: `Last ${charts?.days ?? 14} days · successful payments volume`,
+          data: charts?.daily ?? [],
+          xKey: "label",
+          series: [
+            { key: "paid_amount", name: "Paid amount", color: "#ff5e16" },
+          ],
+          valueFormat: "idr",
+          emptyText: "No paid payments in this period.",
+        }}
+        donut={{
+          title: "Payment status",
+          subtitle: "Share of payments by status",
+          slices: (charts?.status_breakdown ?? []).map((st) => ({
+            name: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+            value: st.count,
+            color: statusColor(st.status),
+          })),
+          emptyText: "No payments yet.",
+        }}
       />
 
       <Card className="p-4 sm:p-5">

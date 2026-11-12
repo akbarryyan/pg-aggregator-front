@@ -120,6 +120,33 @@ export function fetchMerchantDashboardCharts(days = 14, environment?: string) {
   );
 }
 
+export type PaymentLinkStats = {
+  days: number;
+  total: number;
+  active: number;
+  inactive: number;
+  fixed: number;
+  open: number;
+  paid_count: number;
+  paid_amount: number;
+  daily: {
+    date: string;
+    label: string;
+    paid_count: number;
+    paid_amount: number;
+  }[];
+  // Zero-count statuses ("active" / "inactive") are omitted by the server.
+  breakdown: { status: string; count: number }[];
+};
+
+// Everything in the response is scoped to `environment`.
+export function fetchPaymentLinkStats(environment?: string) {
+  const env = environment ?? getMerchantEnvironment();
+  return merchantFetch<PaymentLinkStats>(
+    `/api/v1/merchant/payment-links/stats${toQuery({ environment: env })}`,
+  );
+}
+
 export type MerchantNotification = {
   id: string;
   kind: string;

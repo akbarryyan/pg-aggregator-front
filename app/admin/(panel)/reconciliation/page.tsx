@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { RefreshCwIcon, SearchCheckIcon } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   type AdminReconciliationItem,
   type AdminReconcileResult,
 } from "@/lib/admin-api";
+import StatsOverview from "@/app/components/admin/StatsOverview";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -54,6 +55,83 @@ function checkStatusLabel(status: string) {
   }
 }
 
+const RECON_LIMIT = 50;
+const RECON_DAYS = 14;
+
+function checkStatusColor(status: string) {
+  switch (status) {
+    case "possibly_expired":
+      return "#e85d3b";
+    case "missing_provider_ref":
+      return "#f59e0b";
+    default:
+      return "#94a3b8";
+  }
+}
+
+function localDayKey(d: Date) {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Age as "3 h 12 m" / "2 d 4 h" / "5 m"; "—" when unknown. */
+function formatAge(ms: number) {
+  if (!Number.isFinite(ms) || ms < 0) return "—";
+  const minutes = Math.floor(ms / 60000);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  if (days > 0) return `${days} d ${hours} h`;
+  if (hours > 0) return `${hours} h ${minutes % 60} m`;
+  return `${minutes} m`;
+}
+
+/** Summary of the loaded candidates; no extra request. `now` is the load time. */
+function summarizeReconciliation(
+  items: AdminReconciliationItem[],
+  now: number,
+) {
+  const amount = items.reduce((sum, it) => sum + (it.total_amount ?? 0), 0);
+
+  let oldest = Number.POSITIVE_INFINITY;
+  for (const it of items) {
+    const t = new Date(it.created_at).getTime();
+    if (Number.isFinite(t) && t < oldest) oldest = t;
+  }
+  const oldestAge = Number.isFinite(oldest) ? formatAge(now - oldest) : "—";
+
+  // Last 14 local days, oldest -> newest.
+  const today = new Date(now);
+  const days: { key: string; label: string; amount: number }[] = [];
+  for (let i = RECON_DAYS - 1; i >= 0; i -= 1) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    days.push({
+      key: localDayKey(d),
+      label: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+      amount: 0,
+    });
+  }
+  const byKey = new Map(days.map((d) => [d.key, d]));
+  for (const it of items) {
+    const created = new Date(it.created_at);
+    if (Number.isNaN(created.getTime())) continue;
+    const day = byKey.get(localDayKey(created));
+    if (day) day.amount += it.total_amount ?? 0;
+  }
+
+  const counts = new Map<string, number>();
+  for (const it of items) {
+    counts.set(it.check_status, (counts.get(it.check_status) ?? 0) + 1);
+  }
+  const slices = Array.from(counts, ([status, value]) => ({
+    name: checkStatusLabel(status),
+    value,
+    color: checkStatusColor(status),
+  }));
+
+  return { amount, oldestAge, daily: days, slices };
+}
+
 function actionStyle(action: string) {
   switch (action) {
     case "updated":
@@ -74,6 +152,7 @@ export default function AdminReconciliationPage() {
   const [total, setTotal] = useState(0);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadedAt, setLoadedAt] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -86,11 +165,12 @@ export default function AdminReconciliationPage() {
     async function load() {
       setLoading(true);
       try {
-        const data = await fetchAdminReconciliation(50);
+        const data = await fetchAdminReconciliation(RECON_LIMIT);
         if (cancelled) return;
         setItems(data.items ?? []);
         setTotal(data.total ?? 0);
         setMessage(data.message ?? "");
+        setLoadedAt(Date.now());
       } catch (err) {
         if (cancelled) return;
         toast.error(
@@ -108,6 +188,14 @@ export default function AdminReconciliationPage() {
       cancelled = true;
     };
   }, [refreshKey]);
+
+  // Recomputed from the loaded list whenever it reloads (Refresh / after a
+  // check action); no extra request.
+  const summary = useMemo(
+    () => summarizeReconciliation(items, loadedAt),
+    [items, loadedAt],
+  );
+  const truncated = items.length >= RECON_LIMIT || total > items.length;
 
   async function handleCheckOne(paymentId: string) {
     setCheckingId(paymentId);
@@ -195,6 +283,56 @@ export default function AdminReconciliationPage() {
             </TooltipProvider>
           </div>
         }
+      />
+
+      <StatsOverview
+        loading={loading}
+        error={!loading && loadedAt === 0}
+        onRetry={() => setRefreshKey((k) => k + 1)}
+        cards={
+          loadedAt === 0
+            ? []
+            : [
+                {
+                  label: "Awaiting review",
+                  value: items.length.toLocaleString("id-ID"),
+                  note: truncated
+                    ? `Showing the ${items.length} most recent${total > items.length ? ` of ${total.toLocaleString("id-ID")}` : "; more may exist"}`
+                    : "Pending payments to check",
+                },
+                {
+                  label: "Amount on hold",
+                  value: formatIDR(summary.amount),
+                  note: truncated
+                    ? "Sum of the listed payments"
+                    : "Total of pending payments",
+                },
+                {
+                  label: "Oldest",
+                  value: summary.oldestAge,
+                  note: truncated
+                    ? "Oldest of the listed payments"
+                    : "Age of the oldest pending payment",
+                  tone:
+                    items.length > 0 ? "text-[#c27a00]" : undefined,
+                },
+              ]
+        }
+        chart={{
+          title: "Amount on hold by day created",
+          subtitle: `Last ${RECON_DAYS} days · ${truncated ? "listed payments only" : "pending payments"}`,
+          data: summary.daily,
+          xKey: "label",
+          series: [{ key: "amount", name: "Amount on hold", color: "#ff5e16" }],
+          valueFormat: "idr",
+          emptyText: "No payments on hold in this period.",
+        }}
+        donut={{
+          title: "Check status",
+          subtitle: "Candidates by review status",
+          slices: summary.slices,
+          emptyText: "No candidates to review.",
+        }}
       />
 
       {message && (

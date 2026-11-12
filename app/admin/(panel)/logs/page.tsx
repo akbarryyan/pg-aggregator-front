@@ -8,10 +8,13 @@ import {
   RefreshCwIcon,
 } from "lucide-react";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import StatsOverview, { statusColor } from "@/app/components/admin/StatsOverview";
 import {
   exportAdminLogs,
   fetchAdminLogs,
+  fetchLogStats,
   type AdminLog,
+  type LogStats,
 } from "@/lib/admin-api";
 import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
@@ -93,6 +96,10 @@ export default function AdminLogsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [stats, setStats] = useState<LogStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [statsKey, setStatsKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [page, setPage] = usePagination(
@@ -134,6 +141,27 @@ export default function AdminLogsPage() {
     };
   }, [status, provider, processed, page, pageSize, refreshKey]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if
+  // this fails) and refreshed with the table or via the section's Retry button.
+  useEffect(() => {
+    let cancelled = false;
+    fetchLogStats()
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+        setStatsError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, statsKey]);
+
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
 
@@ -158,6 +186,61 @@ export default function AdminLogsPage() {
       <PageHeader
         title="Logs"
         description="Webhook and processing events for payment debugging. Secrets are never shown."
+      />
+
+      <StatsOverview
+        loading={statsLoading}
+        error={statsError && !stats}
+        onRetry={() => {
+          setStatsLoading(true);
+          setStatsError(false);
+          setStatsKey((k) => k + 1);
+        }}
+        cards={
+          !stats
+            ? []
+            : [
+                {
+                  label: "Total events",
+                  value: stats.total.toLocaleString("id-ID"),
+                  note: "All webhook events",
+                },
+                {
+                  label: "Processed",
+                  value: stats.processed.toLocaleString("id-ID"),
+                  note: "Handled successfully",
+                  tone: "text-[#2f9e5a]",
+                },
+                {
+                  label: "Errors / rejected",
+                  value: stats.failed.toLocaleString("id-ID"),
+                  note: `${stats.ignored.toLocaleString("id-ID")} ignored`,
+                  tone: stats.failed > 0 ? "text-[#e85d3b]" : undefined,
+                },
+              ]
+        }
+        chart={{
+          title: "Events per day",
+          subtitle: `Last ${stats?.days ?? 14} days · processed vs errors`,
+          data: stats?.daily ?? [],
+          xKey: "label",
+          series: [
+            { key: "processed", name: "Processed", color: "#22c55e" },
+            { key: "failed", name: "Errors / rejected", color: "#ef4444" },
+          ],
+          stacked: true,
+          emptyText: "No webhook events in this period.",
+        }}
+        donut={{
+          title: "Event status",
+          subtitle: "Share of events by status",
+          slices: (stats?.breakdown ?? []).map((st) => ({
+            name: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+            value: st.count,
+            color: statusColor(st.status),
+          })),
+          emptyText: "No webhook events yet.",
+        }}
       />
 
       <Card className="p-4 sm:p-5">

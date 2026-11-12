@@ -5,10 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { RefreshCwIcon, RotateCcwIcon } from "lucide-react";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import StatsOverview, { statusColor } from "@/app/components/admin/StatsOverview";
 import {
   fetchAdminCallbacks,
+  fetchCallbackStats,
   retryAdminCallback,
   type AdminCallback,
+  type CallbackStats,
 } from "@/lib/admin-api";
 import { usePagination } from "@/lib/use-pagination";
 import { Button } from "@/components/ui/button";
@@ -87,6 +90,10 @@ export default function AdminCallbacksPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [stats, setStats] = useState<CallbackStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [statsKey, setStatsKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [page, setPage] = usePagination([status, pageSize], totalPages);
@@ -125,6 +132,30 @@ export default function AdminCallbacksPage() {
     };
   }, [status, page, pageSize, refreshKey]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if
+  // this fails) and refreshed with the table or via the section's Retry button.
+  useEffect(() => {
+    let cancelled = false;
+    fetchCallbackStats()
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+        setStatsError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, statsKey]);
+
+  const deliveredPct =
+    stats && stats.total > 0 ? Math.floor((stats.success / stats.total) * 100) : 0;
+
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
 
@@ -148,6 +179,69 @@ export default function AdminCallbacksPage() {
       <PageHeader
         title="Callbacks"
         description="Outbound webhook deliveries to merchant endpoints after payment status changes."
+      />
+
+      <StatsOverview
+        loading={statsLoading}
+        error={statsError && !stats}
+        onRetry={() => {
+          setStatsLoading(true);
+          setStatsError(false);
+          setStatsKey((k) => k + 1);
+        }}
+        cards={
+          !stats
+            ? []
+            : [
+                {
+                  label: "Total deliveries",
+                  value: stats.total.toLocaleString("id-ID"),
+                  note: "All outbound callbacks",
+                },
+                {
+                  label: "Delivered",
+                  value: stats.success.toLocaleString("id-ID"),
+                  note: `${deliveredPct}% of total`,
+                  tone: "text-[#2f9e5a]",
+                },
+                {
+                  label: "Failed / pending",
+                  value: (stats.failed + stats.pending).toLocaleString("id-ID"),
+                  note:
+                    `${stats.failed.toLocaleString("id-ID")} failed · ${stats.pending.toLocaleString("id-ID")} pending` +
+                    (stats.skipped > 0
+                      ? ` · ${stats.skipped.toLocaleString("id-ID")} skipped`
+                      : ""),
+                  tone:
+                    stats.failed + stats.pending > 0
+                      ? "text-[#e85d3b]"
+                      : undefined,
+                },
+              ]
+        }
+        chart={{
+          title: "Deliveries per day",
+          subtitle: `Last ${stats?.days ?? 14} days · outcome of each delivery`,
+          data: stats?.daily ?? [],
+          xKey: "label",
+          series: [
+            { key: "success", name: "Delivered", color: "#22c55e" },
+            { key: "failed", name: "Failed", color: "#ef4444" },
+            { key: "other", name: "Other", color: "#94a3b8" },
+          ],
+          stacked: true,
+          emptyText: "No callback deliveries in this period.",
+        }}
+        donut={{
+          title: "Delivery status",
+          subtitle: "Share of deliveries by status",
+          slices: (stats?.breakdown ?? []).map((st) => ({
+            name: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+            value: st.count,
+            color: statusColor(st.status),
+          })),
+          emptyText: "No callback deliveries yet.",
+        }}
       />
 
       <Card className="p-4 sm:p-5">

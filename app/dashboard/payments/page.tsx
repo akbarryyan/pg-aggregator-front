@@ -10,9 +10,16 @@ import {
   SearchIcon,
 } from "lucide-react";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import StatsOverview, {
+  statusColor,
+} from "@/app/components/admin/StatsOverview";
 import {
   exportMerchantPayments,
+  fetchMerchantDashboardCharts,
+  fetchMerchantDashboardSummary,
   fetchMerchantPayments,
+  type MerchantCharts,
+  type MerchantDashboardSummary,
   type MerchantPayment,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
@@ -78,6 +85,15 @@ export default function MerchantPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [exporting, setExporting] = useState(false);
+  // Stats are tagged with the environment they were loaded for, so a stale
+  // environment's numbers are never shown after a switch.
+  const [stats, setStats] = useState<{
+    env: string;
+    summary: MerchantDashboardSummary;
+    charts: MerchantCharts;
+  } | null>(null);
+  const [statsErrorEnv, setStatsErrorEnv] = useState<string | null>(null);
+  const [statsKey, setStatsKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [page, setPage] = usePagination(
@@ -135,6 +151,36 @@ export default function MerchantPaymentsPage() {
     };
   }, [status, search, dateFrom, dateTo, page, pageSize, refreshKey, environment]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if
+  // this fails); reload on Refresh, Retry and environment change.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchMerchantDashboardSummary(environment),
+      fetchMerchantDashboardCharts(14, environment),
+    ])
+      .then(([summary, charts]) => {
+        if (cancelled) return;
+        setStats({ env: environment, summary, charts });
+        setStatsErrorEnv(null);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsErrorEnv(environment);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [environment, refreshKey, statsKey]);
+
+  const shown = stats && stats.env === environment ? stats : null;
+  const statsError = statsErrorEnv === environment;
+  const successRate =
+    shown && shown.summary.total_payments > 0
+      ? Math.floor(
+          (shown.summary.paid_payments / shown.summary.total_payments) * 100,
+        )
+      : 0;
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -178,6 +224,58 @@ export default function MerchantPaymentsPage() {
       <PageHeader
         title="Payments"
         description={`Showing ${environment} transactions. Switch environment from the header.`}
+      />
+
+      <StatsOverview
+        loading={!shown && !statsError}
+        error={statsError && !shown}
+        onRetry={() => {
+          setStatsErrorEnv(null);
+          setStatsKey((k) => k + 1);
+        }}
+        cards={
+          !shown
+            ? []
+            : [
+                {
+                  label: "Total payments",
+                  value: shown.summary.total_payments.toLocaleString("id-ID"),
+                  note: `${environment} environment`,
+                },
+                {
+                  label: "Paid amount",
+                  value: formatIDR(shown.summary.paid_amount),
+                  note: "From successful payments",
+                },
+                {
+                  label: "Success rate",
+                  value: `${successRate}%`,
+                  tone: "text-[#2f9e5a]",
+                  note: `${shown.summary.paid_payments.toLocaleString("id-ID")} paid`,
+                },
+              ]
+        }
+        chart={{
+          title: "Paid amount per day",
+          subtitle: `Last ${shown?.charts.days ?? 14} days · successful payments volume`,
+          data: shown?.charts.daily ?? [],
+          xKey: "label",
+          series: [
+            { key: "paid_amount", name: "Paid amount", color: "#ff5e16" },
+          ],
+          valueFormat: "idr",
+          emptyText: "No paid payments in this period.",
+        }}
+        donut={{
+          title: "Payment status",
+          subtitle: "Share of payments by status",
+          slices: (shown?.charts.status_breakdown ?? []).map((st) => ({
+            name: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+            value: st.count,
+            color: statusColor(st.status),
+          })),
+          emptyText: "No payments yet.",
+        }}
       />
 
       <Card className="p-4 sm:p-5">

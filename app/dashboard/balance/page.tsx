@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
+import StatsOverview from "@/app/components/admin/StatsOverview";
 import {
   fetchBalance,
+  fetchBalanceDaily,
   fetchLedger,
   fetchPayouts,
   requestPayout,
+  type BalanceDaily,
   type BalanceOverview,
   type MerchantLedgerEntry,
   type MerchantPayout,
@@ -118,6 +121,9 @@ export default function MerchantBalancePage() {
   const [ledgerPage, setLedgerPage] = usePagination([], ledgerPages);
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [daily, setDaily] = useState<BalanceDaily | null>(null);
+  const [dailyError, setDailyError] = useState(false);
+  const [dailyKey, setDailyKey] = useState(0);
   const [amountInput, setAmountInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
@@ -198,6 +204,25 @@ export default function MerchantBalancePage() {
     };
   }, [ledgerPage, refreshKey]);
 
+  // Credits/debits chart: loaded on its own (the rest of the page keeps
+  // working if this fails); reload on refresh (incl. after a payout request)
+  // and on Retry.
+  useEffect(() => {
+    let cancelled = false;
+    fetchBalanceDaily(14)
+      .then((data) => {
+        if (cancelled) return;
+        setDaily(data);
+        setDailyError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setDailyError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, dailyKey]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (inFlight.current) return;
@@ -257,7 +282,7 @@ export default function MerchantBalancePage() {
           tone: "text-[#2f9e5a]",
         },
         {
-          label: "Total paid out",
+          label: "Withdrawn (incl. pending)",
           value: formatIDR(overview.total_paid_out),
           tone: "text-[#1f2a37]",
         },
@@ -306,6 +331,51 @@ export default function MerchantBalancePage() {
               </Card>
             ))}
           </div>
+
+          <StatsOverview
+            chartLoading={!daily && !dailyError}
+            chartError={dailyError && !daily}
+            onChartRetry={() => {
+              setDailyError(false);
+              setDailyKey((k) => k + 1);
+            }}
+            chart={{
+              title: "Credits vs debits per day",
+              subtitle: `Last ${daily?.days ?? 14} days · production`,
+              data: daily?.daily ?? [],
+              xKey: "label",
+              series: [
+                { key: "credited", name: "Credited", color: "#22c55e" },
+                { key: "debited", name: "Debited", color: "#f97316" },
+              ],
+              valueFormat: "idr",
+              emptyText: "No balance movements in this period.",
+            }}
+            donut={{
+              title: "Where your earnings went",
+              subtitle: negative
+                ? "Refunds exceeded your earnings, so the balance is negative."
+                : "Available balance, payouts and refunds",
+              slices: [
+                {
+                  name: "Available",
+                  value: Math.max(overview.balance, 0),
+                  color: "#22c55e",
+                },
+                {
+                  name: "Withdrawn (incl. pending)",
+                  value: overview.total_paid_out,
+                  color: "#3b9eff",
+                },
+                {
+                  name: "Refunded",
+                  value: overview.total_refunded,
+                  color: "#f59e0b",
+                },
+              ],
+              emptyText: "No earnings yet.",
+            }}
+          />
 
           <Card className="p-5 sm:p-6">
             <h2 className="text-[15px] font-semibold text-[#1f2a37]">

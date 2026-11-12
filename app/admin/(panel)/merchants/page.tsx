@@ -230,6 +230,7 @@ export default function AdminMerchantsPage() {
         error={statsError}
         onRetry={() => {
           setStatsLoading(true);
+          setStatsError(false);
           setStatsKey((k) => k + 1);
         }}
       />

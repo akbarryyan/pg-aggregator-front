@@ -159,6 +159,54 @@ export function fetchMerchantStats() {
   return adminFetch<MerchantStats>("/api/v1/admin/merchants/stats");
 }
 
+// Mirrors service.CallbackStats (GET /api/v1/admin/callbacks/stats).
+// pending counts pending + sending deliveries.
+export type CallbackDailyPoint = {
+  date: string;
+  label: string;
+  success: number;
+  failed: number;
+  other: number;
+};
+
+export type CallbackStats = {
+  days: number;
+  total: number;
+  success: number;
+  failed: number;
+  pending: number;
+  skipped: number;
+  daily: CallbackDailyPoint[];
+  breakdown: { status: string; count: number }[];
+};
+
+export function fetchCallbackStats() {
+  return adminFetch<CallbackStats>("/api/v1/admin/callbacks/stats");
+}
+
+// Mirrors service.WebhookEventStats (GET /api/v1/admin/logs/stats). ignored
+// (benign events) is only in the totals, not in the daily points.
+export type LogDailyPoint = {
+  date: string;
+  label: string;
+  processed: number;
+  failed: number;
+};
+
+export type LogStats = {
+  days: number;
+  total: number;
+  processed: number;
+  failed: number;
+  ignored: number;
+  daily: LogDailyPoint[];
+  breakdown: { status: string; count: number }[];
+};
+
+export function fetchLogStats() {
+  return adminFetch<LogStats>("/api/v1/admin/logs/stats");
+}
+
 export function fetchDashboardSummary() {
   return adminFetch<DashboardSummary>("/api/v1/admin/dashboard/summary");
 }
@@ -306,6 +354,7 @@ export type CreateMerchantPayload = {
   phone?: string;
   business_name: string;
   webhook_url?: string;
+  password: string;
 };
 
 export async function createAdminMerchant(

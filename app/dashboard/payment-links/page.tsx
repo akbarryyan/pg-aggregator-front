@@ -5,9 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { CopyIcon, PlusIcon, RefreshCwIcon } from "lucide-react";
 import FilterDropdown from "@/app/components/admin/FilterDropdown";
+import StatsOverview, {
+  statusColor,
+} from "@/app/components/admin/StatsOverview";
 import {
   fetchMerchantPaymentLinks,
+  fetchPaymentLinkStats,
   type MerchantPaymentLink,
+  type PaymentLinkStats,
 } from "@/lib/merchant-api";
 import { useMerchantEnvironment } from "@/lib/use-merchant-environment";
 import { usePagination } from "@/lib/use-pagination";
@@ -98,6 +103,14 @@ export default function PaymentLinksPage() {
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Stats are tagged with the environment they were loaded for, so a stale
+  // environment's numbers are never shown after a switch.
+  const [stats, setStats] = useState<{
+    env: string;
+    data: PaymentLinkStats;
+  } | null>(null);
+  const [statsErrorEnv, setStatsErrorEnv] = useState<string | null>(null);
+  const [statsKey, setStatsKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [page, setPage] = usePagination([status, pageSize, environment], totalPages);
@@ -136,6 +149,29 @@ export default function PaymentLinksPage() {
     };
   }, [status, page, pageSize, refreshKey, environment]);
 
+  // Stats: loaded on their own (the list keeps working if this fails); reload
+  // on Refresh, Retry and environment change.
+  useEffect(() => {
+    let cancelled = false;
+    fetchPaymentLinkStats(environment)
+      .then((data) => {
+        if (cancelled) return;
+        setStats({ env: environment, data });
+        setStatsErrorEnv(null);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsErrorEnv(environment);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [environment, refreshKey, statsKey]);
+
+  const shown = stats && stats.env === environment ? stats.data : null;
+  const statsError = statsErrorEnv === environment;
+  const breakdownCount = (status: string) =>
+    shown?.breakdown.find((b) => b.status === status)?.count ?? 0;
+
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -162,6 +198,66 @@ export default function PaymentLinksPage() {
             New link
           </Link>
         }
+      />
+
+      <StatsOverview
+        loading={!shown && !statsError}
+        error={statsError && !shown}
+        onRetry={() => {
+          setStatsErrorEnv(null);
+          setStatsKey((k) => k + 1);
+        }}
+        errorText="Could not load the payment link summary."
+        cards={
+          !shown
+            ? []
+            : [
+                {
+                  label: "Total links",
+                  value: shown.total.toLocaleString("id-ID"),
+                  note: `${environment} environment`,
+                },
+                {
+                  label: "Active links",
+                  value: shown.active.toLocaleString("id-ID"),
+                  tone: "text-[#2f9e5a]",
+                  note: `${shown.inactive.toLocaleString("id-ID")} inactive`,
+                },
+                {
+                  label: "Paid via links",
+                  value: shown.paid_count.toLocaleString("id-ID"),
+                  note: formatIDR(shown.paid_amount),
+                },
+              ]
+        }
+        chart={{
+          title: "Paid via links per day",
+          subtitle: `Last ${shown?.days ?? 14} days · ${environment}`,
+          data: shown?.daily ?? [],
+          xKey: "label",
+          series: [
+            { key: "paid_count", name: "Paid via links", color: "#ff5e16" },
+          ],
+          valueFormat: "number",
+          emptyText: "No payments through links in this period.",
+        }}
+        donut={{
+          title: "Link status",
+          subtitle: `Active vs inactive links · ${environment}`,
+          slices: [
+            {
+              name: "Active",
+              value: breakdownCount("active"),
+              color: statusColor("active"),
+            },
+            {
+              name: "Inactive",
+              value: breakdownCount("inactive"),
+              color: statusColor("inactive"),
+            },
+          ],
+          emptyText: "No payment links yet.",
+        }}
       />
 
       <Card className="p-4 sm:p-5">

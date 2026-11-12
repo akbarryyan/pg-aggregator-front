@@ -104,6 +104,18 @@ export function fetchBalance() {
   );
 }
 
+export type BalanceDaily = {
+  days: number;
+  daily: { date: string; label: string; credited: number; debited: number }[];
+};
+
+export function fetchBalanceDaily(days = 14) {
+  return get<BalanceDaily>(
+    `/api/v1/merchant/balance/daily?days=${encodeURIComponent(days)}`,
+    "Failed to load balance chart.",
+  );
+}
+
 export function fetchLedger(limit = 20, offset = 0) {
   return get<Paged<MerchantLedgerEntry>>(
     `/api/v1/merchant/ledger${pageQuery(limit, offset)}`,

@@ -40,6 +40,8 @@ export default function CreateMerchantDrawer({
   const [phone, setPhone] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [webhookURL, setWebhookURL] = useState("");
+  const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
@@ -48,16 +50,33 @@ export default function CreateMerchantDrawer({
     setPhone("");
     setBusinessName("");
     setWebhookURL("");
+    setPassword("");
+    setFormError("");
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     if (!name.trim() || !email.trim() || !businessName.trim()) {
+      setFormError("");
       toast.error("Name, email, and business name are required.");
       return;
     }
 
+    if (!password) {
+      setFormError("Password is required.");
+      return;
+    }
+    if (password.length < 8) {
+      setFormError("Password must be at least 8 characters.");
+      return;
+    }
+    if (new TextEncoder().encode(password).length > 72) {
+      setFormError("Password must be at most 72 bytes (accented or non-Latin characters count as several).");
+      return;
+    }
+
+    setFormError("");
     setSubmitting(true);
     try {
       await createAdminMerchant({
@@ -66,16 +85,19 @@ export default function CreateMerchantDrawer({
         phone: phone.trim() || undefined,
         business_name: businessName.trim(),
         webhook_url: webhookURL.trim() || undefined,
+        password,
       });
       toast.success("Merchant created successfully.");
       resetForm();
       onOpenChange(false);
       onCreated();
     } catch (err) {
-      toast.error(
+      setFormError(
         err instanceof Error ? err.message : "Failed to create merchant.",
       );
     } finally {
+      // Never keep the password in state after an attempt.
+      setPassword("");
       setSubmitting(false);
     }
   }
@@ -195,6 +217,35 @@ export default function CreateMerchantDrawer({
                 className="h-10 w-full rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3 text-[13.5px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
               />
             </div>
+
+            <div>
+              <label
+                htmlFor="merchant-password"
+                className="mb-1.5 block text-[13px] font-medium text-[#3d4b5c]"
+              >
+                Password <span className="text-[#e85d3b]">*</span>
+              </label>
+              <input
+                id="merchant-password"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                maxLength={72}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-10 w-full rounded-lg border border-[#e8eef4] bg-[#f8fafc] px-3 text-[13.5px] text-[#1f2a37] outline-none focus:border-[#3b9eff] focus:bg-white focus:ring-2 focus:ring-[#3b9eff]/15"
+              />
+              <p className="mt-1.5 text-[12px] text-[#8a97a8]">
+                Min. 8 characters. Share it with the merchant owner; they can
+                change it in their profile.
+              </p>
+            </div>
+
+            {formError ? (
+              <p role="alert" className="text-[13px] text-[#e85d3b]">
+                {formError}
+              </p>
+            ) : null}
           </div>
         </form>
 

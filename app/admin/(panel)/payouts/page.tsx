@@ -6,14 +6,17 @@ import toast from "react-hot-toast";
 import { CopyIcon, RefreshCwIcon } from "lucide-react";
 import ConfirmedActionDialog from "@/app/components/admin/ConfirmedActionDialog";
 import PagerBar from "@/app/components/admin/PagerBar";
+import StatsOverview, { statusColor } from "@/app/components/admin/StatsOverview";
 import { Button } from "@/components/ui/button";
 import {
   fetchAdminPayouts,
+  fetchPayoutStats,
   markPayoutPaid,
   rejectPayout,
   PAYOUT_REASON_MAX,
   PAYOUT_REFERENCE_MAX,
   type AdminPayout,
+  type PayoutStats,
 } from "@/lib/admin-payouts";
 import { usePagination } from "@/lib/use-pagination";
 import {
@@ -76,6 +79,10 @@ export default function AdminPayoutsPage() {
   const [loadError, setLoadError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [action, setAction] = useState<Action | null>(null);
+  const [stats, setStats] = useState<PayoutStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [statsKey, setStatsKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const [page, setPage] = usePagination([status], totalPages);
@@ -134,6 +141,27 @@ export default function AdminPayoutsPage() {
     };
   }, [status, page, isQueue, refreshKey]);
 
+  // Summary cards + charts: loaded on their own (the table keeps working if
+  // this fails) and refreshed with the table or via the section's Retry button.
+  useEffect(() => {
+    let cancelled = false;
+    fetchPayoutStats()
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+        setStatsError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey, statsKey]);
+
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   async function submit(a: Action, text: string) {
@@ -171,6 +199,58 @@ export default function AdminPayoutsPage() {
             <RefreshCwIcon className={loading ? "animate-spin" : undefined} />
           </Button>
         }
+      />
+
+      <StatsOverview
+        loading={statsLoading}
+        error={statsError && !stats}
+        onRetry={() => {
+          setStatsLoading(true);
+          setStatsError(false);
+          setStatsKey((k) => k + 1);
+        }}
+        cards={
+          !stats
+            ? []
+            : [
+                {
+                  label: "Awaiting processing",
+                  value: stats.requested_count.toLocaleString("id-ID"),
+                  note: formatIDR(stats.requested_amount),
+                  tone: "text-[#c27a00]",
+                },
+                {
+                  label: "Paid out",
+                  value: formatIDR(stats.paid_amount),
+                  note: `${stats.paid_count.toLocaleString("id-ID")} payouts`,
+                  tone: "text-[#2f9e5a]",
+                },
+                {
+                  label: "Rejected",
+                  value: stats.rejected_count.toLocaleString("id-ID"),
+                  note: formatIDR(stats.rejected_amount),
+                },
+              ]
+        }
+        chart={{
+          title: "Payout requests per day",
+          subtitle: `Last ${stats?.days ?? 14} days · requested amount`,
+          data: stats?.daily ?? [],
+          xKey: "label",
+          series: [{ key: "amount", name: "Requested amount", color: "#ff5e16" }],
+          valueFormat: "idr",
+          emptyText: "No payout requests in this period.",
+        }}
+        donut={{
+          title: "Payout status",
+          subtitle: "Share of payouts by status",
+          slices: (stats?.breakdown ?? []).map((st) => ({
+            name: st.status.charAt(0).toUpperCase() + st.status.slice(1),
+            value: st.count,
+            color: statusColor(st.status),
+          })),
+          emptyText: "No payouts yet.",
+        }}
       />
 
       <Card className="p-3">
