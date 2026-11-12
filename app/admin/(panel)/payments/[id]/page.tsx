@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
-import ConfirmedActionDialog from "@/app/components/admin/ConfirmedActionDialog";
 import {
   fetchPaymentRefunds,
-  refundPayment,
-  REFUND_REASON_MAX,
   type AdminRefundSummary,
 } from "@/lib/admin-payouts";
 import {
@@ -52,7 +49,6 @@ export default function AdminPaymentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [refunds, setRefunds] = useState<AdminRefundSummary | null>(null);
   const [refundsError, setRefundsError] = useState(false);
-  const [refundOpen, setRefundOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -131,18 +127,7 @@ export default function AdminPaymentDetailPage() {
                   {payment.description}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <StatusBadge status={payment.status} />
-                {refunds?.refundable && (
-                  <Button
-                    type="button"
-                    className="max-lg:h-9"
-                    onClick={() => setRefundOpen(true)}
-                  >
-                    Refund
-                  </Button>
-                )}
-              </div>
+              <StatusBadge status={payment.status} />
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -239,37 +224,6 @@ export default function AdminPaymentDetailPage() {
                 ))}
               </ul>
             </Card>
-          )}
-
-          {refundOpen && refunds && (
-            <ConfirmedActionDialog
-              open
-              onOpenChange={setRefundOpen}
-              title="Refund payment"
-              description={`Up to ${formatIDR(refunds.remaining_refundable, payment.currency)} can still be refunded.`}
-              warning="Refund is recorded only; return the money to the customer manually. The reason is visible to the merchant."
-              amount={{
-                label: "Amount (IDR)",
-                initial: refunds.remaining_refundable,
-                maxAbs: refunds.remaining_refundable,
-                hint: "Whole rupiah, greater than 0 and at most the remaining refundable amount.",
-              }}
-              text={{ label: "Reason", maxLength: REFUND_REASON_MAX }}
-              confirmLabel="Confirm refund"
-              destructive
-              summary={(v) =>
-                `Refund ${formatIDR(v.amount ?? 0, payment.currency)} of ${payment.reference}\nReason: ${v.text}`
-              }
-              onSubmit={async (v) => {
-                const res = await refundPayment(payment.id, v.amount ?? 0, v.text);
-                toast.success(
-                  res.payment_status === "refunded"
-                    ? "Payment fully refunded."
-                    : "Refund recorded.",
-                );
-                setReloadKey((k) => k + 1);
-              }}
-            />
           )}
 
           {(payment.qris_data || payment.callback_url) && (

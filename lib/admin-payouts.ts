@@ -61,15 +61,8 @@ export type AdminRefundSummary = {
   refundable: boolean;
 };
 
-export type AdminRefundResult = {
-  refund: AdminRefundItem;
-  payment_status: string;
-  remaining_refundable: number;
-};
-
 export const PAYOUT_REFERENCE_MAX = 200;
 export const PAYOUT_REASON_MAX = 500;
-export const REFUND_REASON_MAX = 500;
 export const ADJUSTMENT_REASON_MAX = 500;
 // ledger.MaxAdjustment; the server is authoritative, this only bounds input.
 export const ADJUSTMENT_MAX_ABS = 1_000_000_000_000;
@@ -214,18 +207,6 @@ export function fetchPaymentRefunds(paymentId: string) {
   return get<AdminRefundSummary>(
     `/api/v1/admin/payments/${encodeURIComponent(paymentId)}/refunds`,
     "Failed to load refunds.",
-  );
-}
-
-export function refundPayment(
-  paymentId: string,
-  amount: number,
-  reason: string,
-) {
-  return post<AdminRefundResult>(
-    `/api/v1/admin/payments/${encodeURIComponent(paymentId)}/refund`,
-    { amount, reason },
-    "Failed to record refund.",
   );
 }
 
