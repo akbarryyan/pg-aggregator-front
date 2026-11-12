@@ -2,17 +2,17 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import {
   fetchPublicPaymentByReference,
   type PublicPayment,
 } from "@/lib/merchant-api";
 import {
+  CheckoutFooter,
   CheckoutHeader,
-  MobileDetails,
-  MobileTotal,
-  OrderDetails,
   QrisPanel,
   ResultPanel,
+  SummaryCard,
 } from "./CheckoutPanels";
 
 const POLL_MS = 5000;
@@ -23,6 +23,7 @@ export default function PublicPayPage() {
   const [payment, setPayment] = useState<PublicPayment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   // Poll while the payment is pending; stop once it reaches a final status.
@@ -69,71 +70,82 @@ export default function PublicPayPage() {
     return () => window.clearInterval(t);
   }, [counting]);
 
-  const countdown = (() => {
+  // "Saya sudah bayar": check right away instead of waiting for the next poll.
+  async function checkNow() {
+    if (!reference || checking) return;
+    setChecking(true);
+    try {
+      const data = await fetchPublicPaymentByReference(reference);
+      setPayment(data);
+      setError(null);
+      if (data.status === "pending") {
+        toast("Pembayaran belum kami terima. Jika sudah membayar, tunggu beberapa saat lalu coba lagi.", {
+          duration: 6000,
+        });
+      }
+    } catch {
+      toast.error("Gagal memeriksa status pembayaran. Coba lagi.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  const remainingLabel = (() => {
     if (!payment || payment.status !== "pending") return null;
     const end = new Date(payment.expires_at).getTime();
-    const start = new Date(payment.created_at).getTime();
     if (Number.isNaN(end)) return null;
     const ms = end - now;
-    const total = Number.isNaN(start) ? 0 : end - start;
-    const progress = total > 0 ? Math.max(0, Math.min(1, ms / total)) : 0;
-    if (ms <= 0) return { label: "Habis", progress: 0 };
-    const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    return { label: `${m}:${String(s).padStart(2, "0")}`, progress };
+    if (ms <= 0) return "Habis";
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const mm = String(m).padStart(2, "0");
+    const ss = String(s).padStart(2, "0");
+    return `${String(h).padStart(2, "0")}:${mm}:${ss}`;
   })();
 
   const isFinal = payment !== null && payment.status !== "pending";
+  const sandbox = payment?.environment === "sandbox";
 
   return (
     <main className="min-h-screen bg-[#eff4f8] px-4 py-6 sm:py-10">
-      <div className="mx-auto w-full max-w-4xl">
-        <CheckoutHeader sandbox={payment?.environment === "sandbox"} />
+      <div className="mx-auto w-full max-w-[420px]">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_rgba(16,38,73,0.10)]">
+          <CheckoutHeader merchantName={payment?.merchant_name} sandbox={sandbox} />
 
-        <div className="overflow-hidden rounded-2xl border border-[#e8eef4] bg-white shadow-[0_16px_48px_rgba(16,38,73,0.08)]">
-          {loading && !payment ? (
-            <p className="px-5 py-16 text-center text-[13px] text-[#8a97a8]" role="status">
-              Memuat pembayaran...
-            </p>
-          ) : error || !payment ? (
-            <div className="px-5 py-16 text-center">
-              <h1 className="text-[18px] font-semibold text-[#1f2a37]">
-                Pembayaran tidak ditemukan
-              </h1>
-              <p className="mt-2 text-[13px] text-[#6b7c93]">
-                {error ?? "Periksa kembali tautan pembayaran Anda."}
-              </p>
-            </div>
-          ) : (
-            <>
-              <MobileTotal payment={payment} />
-              <div className="md:grid md:grid-cols-5">
-                <aside className="hidden border-r border-[#e8eef4] bg-[#fafbfc] p-6 md:col-span-2 md:block">
-                  <h2 className="mb-4 text-[15px] font-semibold text-[#1f2a37]">
-                    Ringkasan pesanan
-                  </h2>
-                  <OrderDetails payment={payment} />
-                </aside>
-                <section className="p-5 sm:p-6 md:col-span-3">
+          <div className="px-4 pb-5">
+            {loading && !payment ? (
+              <div className="relative -mt-12 rounded-xl border border-[#e8eef4] bg-white px-4 py-12 text-center shadow-[0_6px_20px_rgba(16,38,73,0.10)]">
+                <p className="text-[13px] text-[#8a97a8]" role="status">
+                  Memuat pembayaran...
+                </p>
+              </div>
+            ) : error || !payment ? (
+              <div className="relative -mt-12 rounded-xl border border-[#e8eef4] bg-white px-4 py-12 text-center shadow-[0_6px_20px_rgba(16,38,73,0.10)]">
+                <h1 className="text-[17px] font-semibold text-[#1f2a37]">
+                  Pembayaran tidak ditemukan
+                </h1>
+                <p className="mt-2 text-[13px] text-[#6b7c93]">
+                  {error ?? "Periksa kembali tautan pembayaran Anda."}
+                </p>
+              </div>
+            ) : (
+              <>
+                <SummaryCard payment={payment} remainingLabel={remainingLabel} />
+                <section className="mt-5">
                   {isFinal ? (
                     <ResultPanel payment={payment} />
                   ) : (
-                    <QrisPanel
-                      payment={payment}
-                      remainingLabel={countdown?.label ?? null}
-                      progress={countdown?.progress ?? 0}
-                    />
+                    <QrisPanel payment={payment} checking={checking} onCheck={() => void checkNow()} />
                   )}
                 </section>
-              </div>
-              <MobileDetails payment={payment} />
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        <p className="mt-4 px-1 text-center text-[11.5px] text-[#8a97a8]">
-          Didukung oleh whuzpay · Jangan membagikan halaman ini kepada siapa pun.
-        </p>
+        <CheckoutFooter sandbox={sandbox} />
       </div>
     </main>
   );

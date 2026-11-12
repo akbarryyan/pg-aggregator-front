@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import {
   CheckCircle2Icon,
+  ChevronDownIcon,
+  CircleHelpIcon,
   ClockIcon,
   CopyIcon,
   DownloadIcon,
@@ -128,22 +130,64 @@ export function OrderDetails({ payment }: { payment: PublicPayment }) {
   );
 }
 
-/** Merchant + total strip shown at the top on small screens. */
-export function MobileTotal({ payment }: { payment: PublicPayment }) {
+/** White card overlapping the navy header: total, countdown, order id, and a
+ *  chevron that reveals the full price breakdown. */
+export function SummaryCard({
+  payment,
+  remainingLabel,
+}: {
+  payment: PublicPayment;
+  /** "59:32", "Habis", or null when no countdown applies (final states). */
+  remainingLabel: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const expired = remainingLabel === "Habis";
   return (
-    <div className="border-b border-[#e8eef4] bg-[#fafbfc] px-5 py-4 md:hidden">
-      {payment.merchant_name ? (
-        <p className="text-[12px] text-[#6b7c93]">
-          Dibayarkan kepada{" "}
-          <span className="font-semibold text-[#1f2a37]">
-            {payment.merchant_name}
+    <div className="relative -mt-12 rounded-xl border border-[#e8eef4] bg-white shadow-[0_6px_20px_rgba(16,38,73,0.10)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={open ? "Sembunyikan rincian pesanan" : "Lihat rincian pesanan"}
+        onClick={() => setOpen((v) => !v)}
+        className="block w-full px-4 py-3 text-left"
+      >
+        <div className="flex items-center justify-between gap-3 text-[12px] text-[#6b7c93]">
+          <span>Total</span>
+          {remainingLabel ? (
+            <span>
+              {expired ? (
+                <span className="font-semibold text-[#e85d3b]">Waktu habis</span>
+              ) : (
+                <>
+                  Bayar dalam{" "}
+                  <span className="font-semibold tabular-nums text-[#1e6fd9]">
+                    {remainingLabel}
+                  </span>
+                </>
+              )}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-0.5 flex items-center justify-between gap-3">
+          <span className="min-w-0 truncate text-[22px] font-bold tracking-tight text-[#1f2a37]">
+            {formatIDR(payment.total_amount, payment.currency)}
           </span>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={`size-5 shrink-0 text-[#1f2a37] transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+        <p className="mt-0.5 truncate text-[11.5px] text-[#8a97a8]">
+          Order ID #{payment.reference}
         </p>
+      </button>
+      {open ? (
+        <div className="border-t border-[#e8eef4] px-4 py-4">
+          <OrderDetails payment={payment} />
+        </div>
       ) : null}
-      <p className="mt-1 text-[12px] text-[#6b7c93]">Total bayar</p>
-      <p className="text-[26px] font-bold leading-tight tracking-tight text-[#1f2a37]">
-        {formatIDR(payment.total_amount, payment.currency)}
-      </p>
     </div>
   );
 }
@@ -166,44 +210,42 @@ const STEPS = [
   "Buka aplikasi e-wallet atau mobile banking Anda.",
   "Pilih menu Bayar / Scan QR, lalu pindai kode QR di atas.",
   "Periksa nominal dan nama penerima, lalu konfirmasi pembayaran.",
+  "Setelah berhasil, tekan “Saya sudah bayar”.",
 ];
 
 export function QrisPanel({
   payment,
-  remainingLabel,
-  progress,
+  checking,
+  onCheck,
 }: {
   payment: PublicPayment;
-  /** "28:41", or null while the clock has not started. */
-  remainingLabel: string | null;
-  /** 0..1 share of the payment window that is left. */
-  progress: number;
+  /** True while a manual status check is in flight. */
+  checking: boolean;
+  /** Re-checks the payment status right away. */
+  onCheck: () => void;
 }) {
+  const [howOpen, setHowOpen] = useState(false);
   const isImageQr =
     payment.qris_data?.startsWith("data:image") ||
     payment.qris_data?.startsWith("http");
-  const expiredLocally = remainingLabel === "Habis";
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-[17px] font-semibold text-[#1f2a37]">
-          Bayar dengan QRIS
-        </h2>
-        <p className="mt-1 text-[13px] text-[#6b7c93]">
-          Pindai kode QR di bawah dengan aplikasi e-wallet atau mobile banking
-          Anda.
-        </p>
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[16px] font-semibold text-[#1f2a37]">QRIS</h2>
+        <span className="rounded border border-[#e8eef4] px-1.5 py-0.5 text-[10px] font-extrabold italic tracking-wide text-[#1f2a37]">
+          QRIS
+        </span>
       </div>
 
-      <div className="rounded-2xl border border-[#e8eef4] bg-white p-4 text-center">
+      <div className="mt-4 text-center">
         {payment.qris_data ? (
           isImageQr ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={payment.qris_data}
               alt="Kode QR QRIS"
-              className="mx-auto aspect-square w-full max-w-65 rounded-lg object-contain"
+              className="mx-auto aspect-square w-full max-w-60 object-contain"
             />
           ) : (
             <pre className="max-h-40 overflow-auto break-all text-left text-[11px] text-[#3d4b5c]">
@@ -216,44 +258,17 @@ export function QrisPanel({
           </p>
         )}
 
-        {remainingLabel ? (
-          <div className="mt-4">
-            <p className="flex items-center justify-center gap-1.5 text-[13px] text-[#6b7c93]">
-              <ClockIcon className="size-4" aria-hidden="true" />
-              {expiredLocally ? (
-                <span className="font-semibold text-[#e85d3b]">
-                  Waktu pembayaran habis
-                </span>
-              ) : (
-                <>
-                  Selesaikan pembayaran dalam{" "}
-                  <span className="font-semibold tabular-nums text-[#1f2a37]">
-                    {remainingLabel}
-                  </span>
-                </>
-              )}
-            </p>
-            <div
-              className="mx-auto mt-2 h-1.5 w-full max-w-65 overflow-hidden rounded-full bg-[#eef2f6]"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress * 100)}
-              aria-label="Sisa waktu pembayaran"
-            >
-              <div
-                className="h-full rounded-full bg-[#ff5e16] transition-[width] duration-1000 ease-linear"
-                style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
-              />
-            </div>
-          </div>
+        {payment.merchant_name ? (
+          <p className="mt-2 text-[12px] text-[#6b7c93]">
+            Penerima: <span className="font-medium">{payment.merchant_name}</span>
+          </p>
         ) : null}
 
         {isImageQr ? (
           <button
             type="button"
             onClick={() => void saveQrImage(payment.qris_data as string, payment.reference)}
-            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#e8eef4] bg-white px-5 text-[13px] font-semibold text-[#3d4b5c] transition hover:bg-[#f4f7fb]"
+            className="mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold text-[#1e6fd9] transition hover:bg-[#eef5ff]"
           >
             <DownloadIcon className="size-4" aria-hidden="true" />
             Simpan QR
@@ -261,42 +276,66 @@ export function QrisPanel({
         ) : null}
       </div>
 
-      <p className="text-center text-[12px] text-[#8a97a8]" role="status">
+      <div className="mt-3 border-y border-[#e8eef4]">
+        <button
+          type="button"
+          aria-expanded={howOpen}
+          onClick={() => setHowOpen((v) => !v)}
+          className="flex h-11 w-full items-center gap-2 text-[13px] font-semibold text-[#1e6fd9]"
+        >
+          <CircleHelpIcon className="size-4.5" aria-hidden="true" />
+          Cara bayar
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={`size-4 transition-transform ${howOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        {howOpen ? (
+          <div className="space-y-4 pb-4">
+            <ol className="space-y-2">
+              {STEPS.map((step, i) => (
+                <li key={step} className="flex gap-3 text-[13px] text-[#3d4b5c]">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[12px] font-semibold text-[#1e6fd9]">
+                    {i + 1}
+                  </span>
+                  <span className="pt-0.5">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div>
+              <p className="text-[12px] font-semibold text-[#1f2a37]">
+                Aplikasi yang didukung
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {APPS.map((app) => (
+                  <li
+                    key={app}
+                    className="rounded-full border border-[#e8eef4] bg-[#fafbfc] px-2.5 py-0.5 text-[11.5px] text-[#3d4b5c]"
+                  >
+                    {app}
+                  </li>
+                ))}
+                <li className="px-1 py-0.5 text-[11.5px] text-[#8a97a8]">
+                  dan aplikasi lain yang mendukung QRIS
+                </li>
+              </ul>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <p className="mt-4 text-center text-[11.5px] text-[#8a97a8]" role="status">
         Status diperbarui otomatis. Jangan tutup halaman ini setelah membayar.
       </p>
 
-      <div>
-        <h3 className="text-[13px] font-semibold text-[#1f2a37]">Cara membayar</h3>
-        <ol className="mt-2 space-y-2">
-          {STEPS.map((step, i) => (
-            <li key={step} className="flex gap-3 text-[13px] text-[#3d4b5c]">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#fff3ec] text-[12px] font-semibold text-[#ff5e16]">
-                {i + 1}
-              </span>
-              <span className="pt-0.5">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div>
-        <h3 className="text-[13px] font-semibold text-[#1f2a37]">
-          Aplikasi yang didukung
-        </h3>
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {APPS.map((app) => (
-            <li
-              key={app}
-              className="rounded-full border border-[#e8eef4] bg-[#fafbfc] px-3 py-1 text-[12px] text-[#3d4b5c]"
-            >
-              {app}
-            </li>
-          ))}
-          <li className="rounded-full px-1 py-1 text-[12px] text-[#8a97a8]">
-            dan semua aplikasi yang mendukung QRIS
-          </li>
-        </ul>
-      </div>
+      <button
+        type="button"
+        onClick={onCheck}
+        disabled={checking}
+        className="mt-3 flex h-12 w-full items-center justify-center rounded-lg bg-[#2b2f36] text-[14px] font-semibold text-white transition hover:bg-[#1f2329] disabled:cursor-wait disabled:opacity-70"
+      >
+        {checking ? "Memeriksa pembayaran..." : "Saya sudah bayar"}
+      </button>
     </div>
   );
 }
@@ -416,49 +455,48 @@ export function ResultPanel({ payment }: { payment: PublicPayment }) {
 
 // ------------------------------------------------------------ page shell
 
-export function CheckoutHeader({ sandbox }: { sandbox: boolean }) {
+/** Navy band with the merchant's initial + name. Extra bottom padding leaves
+ *  room for the SummaryCard that overlaps it. */
+export function CheckoutHeader({
+  merchantName,
+  sandbox,
+}: {
+  merchantName?: string;
+  sandbox: boolean;
+}) {
+  const name = merchantName?.trim() || "Pembayaran";
   return (
-    <header className="mb-4 flex flex-wrap items-center justify-between gap-2 px-1">
-      <p className="text-[15px] font-semibold tracking-tight text-[#06163a]">
-        whuzpay
-        <span className="text-[#ff5e16]">.</span>
-      </p>
-      <div className="flex items-center gap-2">
-        {sandbox ? (
-          <span className="rounded-full bg-[#fff7e6] px-2.5 py-1 text-[11px] font-semibold text-[#c27a00]">
-            Mode sandbox · bukan uang sungguhan
-          </span>
-        ) : null}
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6b7c93]">
-          <LockIcon className="size-3.5" aria-hidden="true" />
-          Pembayaran aman
+    <header className="flex items-center justify-between gap-3 bg-[#0c2a5b] px-4 pt-4 pb-16">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white text-[16px] font-bold text-[#0c2a5b]"
+        >
+          {name.charAt(0).toUpperCase()}
         </span>
+        <p className="truncate text-[15px] font-semibold text-white">{name}</p>
       </div>
+      {sandbox ? (
+        <span className="shrink-0 rounded-full bg-[#fff7e6] px-2.5 py-1 text-[10.5px] font-semibold text-[#c27a00]">
+          Sandbox
+        </span>
+      ) : null}
     </header>
   );
 }
 
-/** Mobile-only disclosure with the order details under the QR panel. */
-export function MobileDetails({ payment }: { payment: PublicPayment }) {
-  const [open, setOpen] = useState(false);
+export function CheckoutFooter({ sandbox }: { sandbox: boolean }) {
   return (
-    <div className="border-t border-[#e8eef4] md:hidden">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-12 w-full items-center justify-between px-5 text-[13px] font-semibold text-[#1f2a37]"
-      >
-        Lihat rincian pesanan
-        <span aria-hidden="true" className="text-[#6b7c93]">
-          {open ? "−" : "+"}
-        </span>
-      </button>
-      {open ? (
-        <div className="px-5 pb-5">
-          <OrderDetails payment={payment} />
-        </div>
+    <div className="mt-4 space-y-1 px-1 text-center text-[11.5px] text-[#8a97a8]">
+      {sandbox ? (
+        <p className="font-medium text-[#c27a00]">
+          Mode sandbox · bukan uang sungguhan
+        </p>
       ) : null}
+      <p className="inline-flex items-center justify-center gap-1.5">
+        <LockIcon className="size-3.5" aria-hidden="true" />
+        Pembayaran aman · Didukung oleh whuzpay
+      </p>
     </div>
   );
 }
