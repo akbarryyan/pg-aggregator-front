@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WalletIcon } from "lucide-react";
+import { HistoryIcon, WalletIcon } from "lucide-react";
 import {
   IconFile,
   IconGrid,
@@ -25,6 +25,7 @@ const navItems = [
   { label: "Callbacks", href: "/admin/callbacks", icon: IconSend },
   { label: "Reconciliation", href: "/admin/reconciliation", icon: IconSync },
   { label: "Logs", href: "/admin/logs", icon: IconFile },
+  { label: "Activity Log", href: "/admin/activity-logs", icon: HistoryIcon },
 ];
 
 type AdminSidebarProps = {

@@ -962,3 +962,97 @@ export async function deleteAdminMerchantAPIKey(
     throw new Error(body?.message ?? "Failed to delete API key.");
   }
 }
+
+// ---- Activity log (GET /api/v1/admin/activity-logs[/stats|/export]) ----
+
+export type ActivityActorType = "admin" | "merchant_user" | "anonymous";
+
+export type ActivityEntry = {
+  id: string;
+  created_at: string;
+  actor_type: ActivityActorType;
+  actor_id?: string;
+  actor_email: string;
+  merchant_id?: string;
+  action: string;
+  method: string;
+  route: string;
+  target_id: string;
+  status_code: number;
+  ip: string;
+  user_agent: string;
+  duration_ms: number;
+  details: Record<string, unknown>;
+};
+
+export type ActivityLogFilters = {
+  search?: string;
+  actor_type?: string;
+  merchant_id?: string;
+  result?: string;
+  date_from?: string;
+  date_to?: string;
+};
+
+export type ActivityLogList = {
+  items: ActivityEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type ActivityDailyPoint = {
+  date: string;
+  label: string;
+  admin: number;
+  merchant: number;
+};
+
+export type ActivityStats = {
+  days: number;
+  total: number;
+  failed_logins: number;
+  active_actors: number;
+  daily: ActivityDailyPoint[];
+  breakdown: { action: string; count: number }[];
+};
+
+export function fetchActivityLogs(
+  params: ActivityLogFilters & { limit?: number; offset?: number },
+) {
+  return adminFetch<ActivityLogList>(
+    `/api/v1/admin/activity-logs${toQuery(params)}`,
+  );
+}
+
+export function fetchActivityLogStats() {
+  return adminFetch<ActivityStats>("/api/v1/admin/activity-logs/stats");
+}
+
+export async function exportActivityLogs(
+  params?: ActivityLogFilters,
+): Promise<void> {
+  const res = await adminAuthFetch(
+    `${API_URL}/api/v1/admin/activity-logs/export${toQuery(params ?? {})}`,
+    { method: "GET", headers: authHeaders() },
+  );
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    throw new Error(body?.message ?? "Failed to export activity logs.");
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = disposition.match(/filename="?([^"]+)"?/i);
+  const filename = match?.[1] ?? `activity-logs-${Date.now()}.csv`;
+
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(url);
+}

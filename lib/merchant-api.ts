@@ -26,10 +26,13 @@ function toQuery(params: Record<string, string | number | undefined | null>) {
   return s ? `?${s}` : "";
 }
 
-async function merchantFetch<T>(path: string): Promise<T> {
+async function merchantFetch<T>(
+  path: string,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
   const res = await merchantAuthFetch(`${API_URL}${path}`, {
     method: "GET",
-    headers: authHeaders(),
+    headers: { ...authHeaders(), ...extraHeaders },
     cache: "no-store",
   });
   const body = (await res.json().catch(() => null)) as T | ApiErrorBody | null;
@@ -255,8 +258,16 @@ export async function exportMerchantPayments(params?: {
   window.URL.revokeObjectURL(url);
 }
 
-export function fetchMerchantPayment(id: string) {
-  return merchantFetch<MerchantPayment>(`/api/v1/merchant/payments/${id}`);
+// `background: true` marks automatic polling so it is not written to the
+// activity log (X-Background-Request: 1).
+export function fetchMerchantPayment(
+  id: string,
+  opts?: { background?: boolean },
+) {
+  return merchantFetch<MerchantPayment>(
+    `/api/v1/merchant/payments/${id}`,
+    opts?.background ? { "X-Background-Request": "1" } : undefined,
+  );
 }
 
 export async function createMerchantPayment(payload: {

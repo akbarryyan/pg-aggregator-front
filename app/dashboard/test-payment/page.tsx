@@ -132,7 +132,9 @@ export default function TestPaymentPage() {
     const poll = window.setInterval(() => {
       void (async () => {
         try {
-          const p = await fetchMerchantPayment(paymentId);
+          const p = await fetchMerchantPayment(paymentId, {
+            background: true,
+          });
           if (cancelled) return;
           if (FINAL_STATUSES.has(p.status)) loadHistory(); // refresh history on a final status
           // Keep the QR if a poll response omits it; ignore a late reply for another payment.
