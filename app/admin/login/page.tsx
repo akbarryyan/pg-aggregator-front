@@ -11,6 +11,7 @@ import {
   loginAdmin,
   saveAdminSession,
 } from "@/lib/admin-auth";
+import { BrandMark, BrandWordmark } from "@/app/components/BrandLogo";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -34,21 +35,11 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-function LectorLogo({ className = "" }: { className?: string }) {
+function WhuzPayLogo({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#ff5e16]">
-        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 text-white" fill="currentColor">
-          <path d="M4 12c3-6 6-8 8-8s5 2 8 8c-3 6-6 8-8 8s-5-2-8-8Z" />
-          <path
-            d="M9 12c1.2-2.2 2.3-3 3-3s1.8.8 3 3c-1.2 2.2-2.3 3-3 3s-1.8-.8-3-3Z"
-            fill="#ffffff"
-          />
-        </svg>
-      </span>
-      <span className="text-[24px] font-semibold tracking-tight text-[#06163a]">
-        Lector<span className="text-[#ff5e16]">.</span>
-      </span>
+      <BrandMark className="h-9 w-9" />
+      <BrandWordmark className="text-[24px] text-[#06163a]" />
     </div>
   );
 }
@@ -172,7 +163,7 @@ export default function AdminLoginPage() {
 
       <div className="relative w-full max-w-110">
         <div className="mb-8 flex flex-col items-center text-center">
-          <LectorLogo />
+          <WhuzPayLogo />
           <p className="mt-3 text-[13px] text-[#8a97a8]">Admin Panel</p>
         </div>
 

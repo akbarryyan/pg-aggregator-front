@@ -3,7 +3,7 @@ import AdminAuthGate from "../../components/admin/AdminAuthGate";
 import AdminShell from "../../components/admin/AdminShell";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard | Lector",
+  title: "Admin Dashboard | WhuzPay",
   description: "Admin dashboard overview",
 };
 

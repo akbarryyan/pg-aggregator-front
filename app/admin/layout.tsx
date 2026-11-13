@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Admin | Lector",
+  title: "Admin | WhuzPay",
   description: "Admin panel",
 };
 

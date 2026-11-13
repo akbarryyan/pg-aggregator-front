@@ -3,7 +3,7 @@ import MerchantAuthGate from "../components/merchant/MerchantAuthGate";
 import MerchantShell from "../components/merchant/MerchantShell";
 
 export const metadata: Metadata = {
-  title: "Merchant Dashboard | Lector",
+  title: "Merchant Dashboard | WhuzPay",
   description: "Merchant payment dashboard",
 };
 

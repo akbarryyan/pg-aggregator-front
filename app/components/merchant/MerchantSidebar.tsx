@@ -14,6 +14,7 @@ import {
   IconUser,
   IconWebhook,
 } from "../admin/icons";
+import { BrandMark } from "@/app/components/BrandLogo";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: IconGrid },
@@ -53,21 +54,13 @@ export default function MerchantSidebar({ collapsed, mobileOpen, onNavigate }: P
           collapsed ? "justify-center px-2" : "gap-2.5 px-5"
         }`}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#ff5e16]">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="currentColor">
-            <path d="M4 12c3-6 6-8 8-8s5 2 8 8c-3 6-6 8-8 8s-5-2-8-8Z" />
-            <path
-              d="M9 12c1.2-2.2 2.3-3 3-3s1.8.8 3 3c-1.2 2.2-2.3 3-3 3s-1.8-.8-3-3Z"
-              fill="#06163a"
-            />
-          </svg>
-        </span>
+        <BrandMark />
         <span
           className={`overflow-hidden whitespace-nowrap text-[22px] font-semibold tracking-tight transition-all duration-200 ${
             collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
           }`}
         >
-          Lector<span className="text-[#ff5e16]">.</span>
+          WhuzPay<span className="text-[#ff5e16]">.</span>
         </span>
       </div>
 
@@ -115,17 +108,6 @@ export default function MerchantSidebar({ collapsed, mobileOpen, onNavigate }: P
             );
           })}
         </ul>
-
-        {!collapsed && (
-          <div className="mx-5 mt-6 rounded-lg border border-white/10 bg-white/5 px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">
-              Merchant
-            </p>
-            <p className="mt-1 text-[12px] leading-relaxed text-white/60">
-              Payments, API keys, and business settings for your store.
-            </p>
-          </div>
-        )}
       </nav>
     </aside>
   );
